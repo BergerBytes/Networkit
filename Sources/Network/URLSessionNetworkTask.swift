@@ -16,9 +16,21 @@ public class URLSessionNetworkTask<R: Codable, P: NetworkParameters>: QueueableT
     private let parameters: P
     private let cachePolicy: CachePolicy?
     private let dataCallback: ((R) -> Void)?
+    private weak var delegate: RequestDelegate?
+    private let delegateId: Identifiable?
     private let networkManager: NetworkManager
     
-    required init(urlSession: URLSession = .shared, method: RequestMethod, url: URL, parameters: P, headers: [String: String]?, cachePolicy: CachePolicy?, dataCallback: ((R) -> Void)?, networkManager: NetworkManager = .shared) {
+    required init(
+        urlSession: URLSession = .shared,
+        method: RequestMethod,
+        url: URL,
+        parameters: P,
+        headers: [String: String]?,
+        cachePolicy: CachePolicy?,
+        dataCallback: ((R) -> Void)?,
+        delegate: RequestDelegateConfig?,
+        networkManager: NetworkManager = .shared
+    ) {
         self.urlSession = urlSession
         
         self.method = method
@@ -26,6 +38,8 @@ public class URLSessionNetworkTask<R: Codable, P: NetworkParameters>: QueueableT
         self.parameters = parameters
         self.cachePolicy = cachePolicy
         self.dataCallback = dataCallback
+        self.delegate = delegate?.delegate
+        self.delegateId = delegate?.id
         self.networkManager = networkManager
         
         var hasher = Hasher()
@@ -38,6 +52,8 @@ public class URLSessionNetworkTask<R: Codable, P: NetworkParameters>: QueueableT
     
     public override func process() async {
         await super.process()
+        
+        delegate?.requestStarted(id: delegateId)
         
         do {
             if #available(iOS 15.0, *) {
@@ -77,6 +93,7 @@ public class URLSessionNetworkTask<R: Codable, P: NetworkParameters>: QueueableT
     }
     
     open func complete(response: R) {
+        delegate?.requestCompleted(id: delegateId)
         dataCallback?(response)
 
         if let cachePolicy = cachePolicy {
@@ -89,5 +106,7 @@ public class URLSessionNetworkTask<R: Codable, P: NetworkParameters>: QueueableT
         }
     }
     
-    open func failed(error: Error) { }
+    open func failed(error: Error) {
+        delegate?.requestFailed(id: delegateId, error: error)
+    }
 }

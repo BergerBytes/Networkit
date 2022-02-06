@@ -33,13 +33,13 @@ public protocol CacheableResponse: RequestableResponse {
 }
 
 extension CacheableResponse {
-    public static func fetch(given parameters: P, with networkManager: NetworkManager = .shared) {
-        fetch(given: parameters, with: networkManager, dataCallback: { _ in })
+    public static func fetch(given parameters: P, delegate: RequestDelegateConfig?, with networkManager: NetworkManager = .shared) {
+        fetch(given: parameters, delegate: delegate, with: networkManager, dataCallback: { _ in })
     }
     
     @discardableResult
-    public static func observe(on object: AnyObject, given parameters: P, with networkManager: NetworkManager = .shared, observer: @escaping (_ data: Self) -> Void) -> ObserverToken {
-        let request = Self.requestTask(given: parameters, dataCallback: { _ in })
+    public static func observe(on object: AnyObject, given parameters: P, delegate: RequestDelegateConfig?, with networkManager: NetworkManager = .shared, observer: @escaping (_ data: Self) -> Void) -> ObserverToken {
+        let request = Self.requestTask(given: parameters, delegate: delegate, dataCallback: { _ in })
                 
         let token = networkManager.addObserver(for: request.id, on: object) { data in
             guard
@@ -70,16 +70,16 @@ extension CacheableResponse {
 
 extension CacheableResponse where Self.P == NoParameters {
     @discardableResult
-    public static func observe(on object: AnyObject, observer: @escaping (_ data: Self) -> Void) -> ObserverToken {
-        observe(on: object, given: .none, observer: observer)
+    public static func observe(on object: AnyObject, delegate: RequestDelegateConfig?, observer: @escaping (_ data: Self) -> Void) -> ObserverToken {
+        observe(on: object, given: .none, delegate: delegate, observer: observer)
     }
     
-    public static func fetch(with networkManager: NetworkManager = .shared, force: Bool = false) {
-        fetch(with: networkManager, force: force, dataCallback: { _ in })
+    public static func fetch(delegate: RequestDelegateConfig?, with networkManager: NetworkManager = .shared, force: Bool = false) {
+        fetch(delegate: delegate, with: networkManager, force: force, dataCallback: { _ in })
     }
     
-    public static func fetch(with networkManager: NetworkManager = .shared, force: Bool = false, dataCallback: @escaping (Self) -> Void) {
-        let requestTask = Self.requestTask(given: .none, dataCallback: dataCallback)
+    public static func fetch(delegate: RequestDelegateConfig?, with networkManager: NetworkManager = .shared, force: Bool = false, dataCallback: @escaping (Self) -> Void) {
+        let requestTask = Self.requestTask(given: .none, delegate: delegate, dataCallback: dataCallback)
         
         let isExpired = (try? networkManager.storage.isExpiredObject(forKey: requestTask.id)) ?? true
         Debug.log("Is Expired: \(isExpired)")

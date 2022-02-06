@@ -88,7 +88,7 @@ public class NetworkManager {
         operationQueue.addOperation(task.newOperation())
     }
     
-    public func request<T: RequestableResponse>(_ response: T.Type, observer: @escaping (T) -> Void) where T.P == NoParameters {
-        enqueue(T.requestTask(observer: observer))
+    public func request<T: RequestableResponse>(_ response: T.Type, delegate: RequestDelegateConfig?, dataCallback: @escaping (T) -> Void) where T.P == NoParameters {
+        enqueue(T.requestTask(delegate: delegate, dataCallback: dataCallback))
     }
 }

@@ -13,8 +13,8 @@ public protocol RequestableResponse: Codable {
 extension RequestableResponse {
     public static func headers(given parameters: P) -> [String: String]? { nil }
     
-    public static func fetch(given parameters: P, with networkManager: NetworkManager = .shared, dataCallback: @escaping (Self) -> Void) {
-        let requestTask = Self.requestTask(given: parameters, dataCallback: dataCallback)
+    public static func fetch(given parameters: P, delegate: RequestDelegateConfig?, with networkManager: NetworkManager = .shared, dataCallback: @escaping (Self) -> Void) {
+        let requestTask = Self.requestTask(given: parameters, delegate: delegate, dataCallback: dataCallback)
         
         if Self.self is CacheableResponse.Type {
             let isExpired = (try? networkManager.storage.isExpiredObject(forKey: requestTask.id)) ?? true
@@ -31,24 +31,25 @@ extension RequestableResponse {
     
     /// Create a URLSessionNetworkTask for a request response.
     /// - Parameter parameters: The parameters for the network response.
-    /// - Returns: The URL session task.
-    static func requestTask(given parameters: P, dataCallback: @escaping (Self) -> Void) -> URLSessionNetworkTask<Self, P> {
+    /// - Returns: A URL session task. (QueueableTask)
+    public static func requestTask(given parameters: P, delegate: RequestDelegateConfig?, dataCallback: @escaping (Self) -> Void) -> QueueableTask {
         URLSessionNetworkTask(
             method: method,
             url: url(given: parameters),
             parameters: parameters,
             headers: headers(given: parameters),
             cachePolicy: (Self.self as? CacheableResponse.Type)?.cachePolicy,
-            dataCallback: dataCallback
+            dataCallback: dataCallback,
+            delegate: delegate
         )
     }
 }
 
 extension RequestableResponse where P == NoParameters {
     /// Create a URLSessionNetworkTask for a request response without any parameter requirements.
-    /// - Returns: The URL session task.
-    static func requestTask(observer: @escaping (_ data: Self) -> Void) -> URLSessionNetworkTask<Self, P> {
-        requestTask(given: .none, dataCallback: observer)
+    /// - Returns: The URL session task. (QueueableTask)
+    public static func requestTask(delegate: RequestDelegateConfig?, dataCallback: @escaping (_ data: Self) -> Void) -> QueueableTask {
+        requestTask(given: .none, delegate: delegate, dataCallback: dataCallback)
     }
 }
 
