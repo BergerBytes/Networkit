@@ -1,0 +1,43 @@
+{
+  "object": {
+    "pins": [
+      {
+        "package": "AnyCodable",
+        "repositoryURL": "https://github.com/Flight-School/AnyCodable",
+        "state": {
+          "branch": null,
+          "revision": "b1a7a8a6186f2fcb28f7bda67cfc545de48b3c80",
+          "version": "0.6.2"
+        }
+      },
+      {
+        "package": "Cache",
+        "repositoryURL": "https://github.com/hyperoslo/Cache",
+        "state": {
+          "branch": null,
+          "revision": "c7f4d633049c3bd649a353bad36f6c17e9df085f",
+          "version": "6.0.0"
+        }
+      },
+      {
+        "package": "QueueTask",
+        "repositoryURL": "https://github.com/BergerBytes/queuetask.git",
+        "state": {
+          "branch": "dev",
+          "revision": "f02f933660f6af033470976984d182ac9c52355c",
+          "version": null
+        }
+      },
+      {
+        "package": "Debug",
+        "repositoryURL": "https://github.com/BergerBytes/swift-debug.git",
+        "state": {
+          "branch": null,
+          "revision": "73eae5532e3e7582a50be26e9ad8e39053e75cb0",
+          "version": "1.4.1"
+        }
+      }
+    ]
+  },
+  "version": 1
+}
