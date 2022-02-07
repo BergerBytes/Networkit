@@ -16,6 +16,10 @@ extension FirstPartyRequestableResponse {
     static func headers(given parameters: P) -> [String: String]? {
         ["auth": "string"]
     }
+    
+    public static func handle(response: URLResponse, data: Data?) -> Error? {
+        nil
+    }
 }
 
 struct CategoryProductListResponse: FirstPartyRequestableResponse {
@@ -32,8 +36,12 @@ struct CategoryProductListResponse: FirstPartyRequestableResponse {
 }
 
 struct SomeOtherRequestResponse: RequestableResponse {
+    static func handle(response: URLResponse, data: Data?) -> Error? {
+        nil
+    }
+    
     static var method: RequestMethod = .get
-    static func url(given parameters: Int) -> URL {
-        URL(string: "www.google.com")!
+    static func url(given id: Int) -> URL {
+        URL(string: "www.google.com/\(id)")!
     }
 }

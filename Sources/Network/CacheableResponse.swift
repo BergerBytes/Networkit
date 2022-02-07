@@ -15,7 +15,7 @@ public enum CachePolicy {
         case .never:
             return nil
             
-        case .timed(let days, let hours, let minutes):
+        case let .timed(days, hours, minutes):
             let daysToSeconds = days * 24 * 60 * 60
             let hoursToSeconds = hours * 60 * 60
             let minutesToSeconds = minutes * 60

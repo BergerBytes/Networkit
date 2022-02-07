@@ -8,6 +8,7 @@ public protocol RequestableResponse: Codable {
     static var method: RequestMethod { get }
     static func url(given parameters: P) -> URL
     static func headers(given parameters: P) -> [String: String]?
+    static func handle(response: URLResponse, data: Data?) -> Error?
 }
 
 extension RequestableResponse {

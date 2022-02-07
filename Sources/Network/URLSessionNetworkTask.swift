@@ -1,9 +1,21 @@
 import Debug
 import Foundation
 
-public typealias NetworkParameters = Hashable
+public protocol NetworkParameters: Hashable, Encodable {}
 
-public protocol EncodableNetworkParameters: NetworkParameters & Encodable {
+extension Int: NetworkParameters {}
+extension Float: NetworkParameters {}
+extension Double: NetworkParameters {}
+extension String: NetworkParameters {}
+extension Bool: NetworkParameters {}
+
+extension NetworkParameters {
+    public typealias Encodable = EncodableNetworkParameters
+    public typealias URL = URLNetworkParameters
+    public typealias Body = BodyNetworkParameters
+}
+
+public protocol EncodableNetworkParameters: NetworkParameters {
     func asURL() -> [String: Any]?
     func asBody() -> Data?
 }
@@ -40,9 +52,10 @@ public protocol MergableRequest: QueueableTask {
     func shouldBeMerged(with task: MergableRequest) -> Bool
 }
 
-public class URLSessionNetworkTask<R: Codable, P: NetworkParameters>: QueueableTask {
+public class URLSessionNetworkTask<R: RequestableResponse, P: NetworkParameters>: QueueableTask {
     enum Errors: Error {
         case invalidURL
+        case noResponse
     }
     
     private let urlSession: URLSession
@@ -131,12 +144,30 @@ public class URLSessionNetworkTask<R: Codable, P: NetworkParameters>: QueueableT
         do {
             if #available(iOS 15.0, *) {
                 let (data, response) = try await urlSession.data(for: urlRequest)
+                
+                if let error = R.handle(response: response, data: data) {
+                    failed(error: error)
+                    return
+                }
+                
                 let decodedData = try JSONDecoder().decode(R.self, from: data)
                 complete(response: decodedData)
             } else {
                 let task = urlSession.dataTask(with: urlRequest) { data, response, error in
                     do {
                         if let error = error {
+                            self.failed(error: error)
+                            return
+                        }
+                        
+                        guard
+                            let response = response
+                        else {
+                            self.failed(error: Errors.noResponse)
+                            return
+                        }
+                        
+                        if let error = R.handle(response: response, data: data) {
                             self.failed(error: error)
                             return
                         }

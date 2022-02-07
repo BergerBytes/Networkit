@@ -12,7 +12,7 @@ public class NetworkManager {
     public static let shared = NetworkManager()
     
     static let diskConfig = DiskConfig(
-      name: "com.foxtrot.network.cache",
+      name: "com.network.cache",
       expiry: .seconds(30 * 24 * 60 * 60), // 30 Days
       maxSize: 100_000_000, // 100mb
       protectionType: .complete
