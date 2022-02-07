@@ -85,6 +85,17 @@ public class NetworkManager {
     }
     
     public func enqueue(_ task: QueueableTask) {
+        if
+            let task = task as? MergableRequest,
+            let existingTask = self.operationQueue.operations
+                .filter({ !$0.isFinished && !$0.isCancelled })
+                .compactMap({ ($0 as? TaskOperation)?.task as? MergableRequest})
+                .first(where: { task.shouldBeMerged(with: $0) })
+        {
+            existingTask.delegate += task.delegate
+            return
+        }
+        
         operationQueue.addOperation(task.newOperation())
     }
     

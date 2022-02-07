@@ -34,8 +34,11 @@ open class MulticastDelegate<T> {
     /// - Note: Alternatively, you can use the `+=` operator to add a delegate.
     ///
     /// - parameter delegate: The delegate to be added.
-    public func addDelegate(_ delegate: T) {
-        guard containsDelegate(delegate) == false else {
+    public func addDelegate(_ delegate: T?) {
+        guard
+            let delegate = delegate,
+            containsDelegate(delegate) == false
+        else {
             return
         }
         
@@ -57,8 +60,8 @@ open class MulticastDelegate<T> {
     ///
     /// - parameter invocation: The closure to be invoked on each delegate.
     public func invokeDelegates(_ invocation: (T) -> ()) {
-        for delegate in delegates.allObjects {
-            invocation(delegate as! T)
+        for delegate in delegates.allObjects.compactMap({ $0 as? T }) {
+            invocation(delegate)
         }
     }
     
@@ -79,9 +82,7 @@ open class MulticastDelegate<T> {
 /// - parameter left:   The multicast delegate
 /// - parameter right:  The delegate to be added
 public func +=<T>(left: MulticastDelegate<T>, right: T?) {
-    if let right = right {
-        left.addDelegate(right)
-    }
+    left.addDelegate(right)
 }
 
 /// Use this operator to combine the delgates of two multicast delegates.

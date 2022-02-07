@@ -8,6 +8,19 @@ public struct NoParameters: NetworkParameters {
     public static let none = NoParameters()
 }
 
+public protocol RequestDelegatedTask: QueueableTask {
+    var delegate: MulticastDelegate<RequestDelegate> { get }
+    var delegateId: Identifiable? { get }
+}
+
+/// A Network task that should be merged if the same request is found already queued.
+public protocol MergableRequest: RequestDelegatedTask {
+    /// Check for wether or this task should be merged with the provided task.
+    /// - Parameter task: The task to merge with.
+    /// - Returns: Booll True if tasks should be merged.
+    func shouldBeMerged(with task: MergableRequest) -> Bool
+}
+
 public class URLSessionNetworkTask<R: Codable, P: NetworkParameters>: QueueableTask {
     private let urlSession: URLSession
     
@@ -16,8 +29,8 @@ public class URLSessionNetworkTask<R: Codable, P: NetworkParameters>: QueueableT
     private let parameters: P
     private let cachePolicy: CachePolicy?
     private let dataCallback: ((R) -> Void)?
-    private weak var delegate: RequestDelegate?
-    private let delegateId: Identifiable?
+    public let delegate = MulticastDelegate<RequestDelegate>()
+    public let delegateId: Identifiable?
     private let networkManager: NetworkManager
     
     required init(
@@ -38,7 +51,7 @@ public class URLSessionNetworkTask<R: Codable, P: NetworkParameters>: QueueableT
         self.parameters = parameters
         self.cachePolicy = cachePolicy
         self.dataCallback = dataCallback
-        self.delegate = delegate?.delegate
+        self.delegate += delegate?.delegate
         self.delegateId = delegate?.id
         self.networkManager = networkManager
         
@@ -53,8 +66,8 @@ public class URLSessionNetworkTask<R: Codable, P: NetworkParameters>: QueueableT
     public override func process() async {
         await super.process()
         
-        delegate?.requestStarted(id: delegateId)
-        
+        delegate.invokeDelegates { $0.requestStarted(id: delegateId) }
+                
         do {
             if #available(iOS 15.0, *) {
                 let (data, _) = try await urlSession.data(from: url)
@@ -93,7 +106,7 @@ public class URLSessionNetworkTask<R: Codable, P: NetworkParameters>: QueueableT
     }
     
     open func complete(response: R) {
-        delegate?.requestCompleted(id: delegateId)
+        delegate.invokeDelegates { $0.requestCompleted(id: delegateId) }
         dataCallback?(response)
 
         if let cachePolicy = cachePolicy {
@@ -107,6 +120,16 @@ public class URLSessionNetworkTask<R: Codable, P: NetworkParameters>: QueueableT
     }
     
     open func failed(error: Error) {
-        delegate?.requestFailed(id: delegateId, error: error)
+        delegate.invokeDelegates { $0.requestFailed(id: delegateId, error: error) }
+    }
+
+}
+
+// MARK: - MergableRequest
+
+extension URLSessionNetworkTask: MergableRequest {
+    public func shouldBeMerged(with task: MergableRequest) -> Bool {
+        guard let task = task as? Self else { return false }
+        return id == task.id
     }
 }
