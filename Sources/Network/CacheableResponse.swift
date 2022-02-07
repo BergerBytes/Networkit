@@ -33,7 +33,7 @@ public protocol CacheableResponse: RequestableResponse {
 }
 
 extension CacheableResponse {
-    public static func fetch(given parameters: P, delegate: RequestDelegateConfig?, with networkManager: NetworkManager = .shared) {
+    public static func fetch(given parameters: P, delegate: RequestDelegateConfig? = nil, with networkManager: NetworkManager = .shared) {
         fetch(given: parameters, delegate: delegate, with: networkManager, dataCallback: { _ in })
     }
     
