@@ -1,6 +1,7 @@
 import Foundation
 import Debug
 import Cache
+import AnyCodable
 
 public enum CachePolicy {
     case never
@@ -60,8 +61,11 @@ extension CacheableResponse {
         }
         
         // Return any cached data.
-        if let cachedData = (try? networkManager.storage.object(forKey: request.id))?.value as? Self {
-            observer(cachedData)
+        if
+            let cachedData = (try? networkManager.storage.object(forKey: request.id))?.value as? [String: Any],
+            let decodedData = DictionaryDecoder().decode(Self.self, from: cachedData)
+        {
+            observer(decodedData)
         }
         
         return token

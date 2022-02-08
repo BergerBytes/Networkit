@@ -10,3 +10,15 @@ class DictionaryEncoder {
         return try JSONSerialization.jsonObject(with: jsonData, options: .allowFragments) as! [String : Any]
     }
 }
+
+class DictionaryDecoder {
+    func decode<T: Decodable>(_ type: T.Type, from value: [String: Any]) -> T? {
+        guard
+            let jsonData = try? JSONSerialization.data(withJSONObject: value, options: .fragmentsAllowed)
+        else {
+            return nil
+        }
+        
+        return try? JSONDecoder().decode(type, from: jsonData)
+    }
+}

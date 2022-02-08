@@ -1,3 +1,4 @@
+import CryptoKit
 import Debug
 import Foundation
 
@@ -94,13 +95,33 @@ public class URLSessionNetworkTask<R: RequestableResponse, P: NetworkParameters>
         self.delegate += delegate?.delegate
         self.delegateId = delegate?.id
         self.networkManager = networkManager
-        
-        var hasher = Hasher()
-        hasher.combine(method)
-        hasher.combine(url)
-        hasher.combine(parameters)
-        
-        super.init(id: "\(url) | \(hasher.finalize())", type: .standard)
+                
+        guard
+            let encodedParameters = try? JSONEncoder().encode(parameters),
+            let hash = try? SHA256.hash(data: JSONEncoder().encode([method.rawValue, url.absoluteString, String(decoding: encodedParameters, as: UTF8.self)]))
+        else {
+            Debug.log(
+                level: .error,
+                "Failed to runtime agnostically hash a URLSessionNetworkTask id. Falling back to Hasher().",
+                params: [
+                    "Response Type": "\(R.self)",
+                    "Parameters Type": "\(P.self)",
+                    "URL": "\(url.absoluteString)",
+                    "method": method.rawValue,
+                ]
+            )
+            
+            var hasher = Hasher()
+            hasher.combine(method)
+            hasher.combine(url)
+            hasher.combine(parameters)
+            
+            super.init(id: "\(url) | \(hasher.finalize())", type: .standard)
+            return
+        }
+
+        let stringHash = hash.map { String(format: "%02hhx", $0) }.joined()
+        super.init(id: "\(url) | \(stringHash)", type: .standard)
     }
     
     public override func process() async {
