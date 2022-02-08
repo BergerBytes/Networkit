@@ -61,7 +61,13 @@ extension CacheableResponse {
         }
         
         // Return any cached data.
+        
         if
+            let cachedData = (try? networkManager.storage.object(forKey: request.id))?.value as? Self
+        {
+            observer(cachedData)
+        }
+        else if
             let cachedData = (try? networkManager.storage.object(forKey: request.id))?.value as? [String: Any],
             let decodedData = DictionaryDecoder().decode(Self.self, from: cachedData)
         {
