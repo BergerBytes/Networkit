@@ -29,11 +29,13 @@ public enum CachePolicy {
     }
 }
 
-public protocol CacheableResponse: RequestableResponse {
+public protocol Cacheable {
     static var cachePolicy: CachePolicy { get }
 }
 
-extension CacheableResponse {
+public protocol CacheableResponse: RequestableResponse, Cacheable { }
+
+extension Cacheable where Self: RequestableResponse {
     public static func fetch(given parameters: P, delegate: RequestDelegateConfig? = nil, with networkManager: NetworkManager = .shared) {
         fetch(given: parameters, delegate: delegate, with: networkManager, dataCallback: { _ in })
     }
@@ -78,7 +80,7 @@ extension CacheableResponse {
     }
 }
 
-extension CacheableResponse where Self.P == NoParameters {
+extension Cacheable where Self: RequestableResponse, Self.P == NoParameters {
     @discardableResult
     public static func observe(on object: AnyObject, delegate: RequestDelegateConfig?, observer: @escaping (_ data: Self) -> Void) -> ObserverToken {
         observe(on: object, given: .none, delegate: delegate, observer: observer)

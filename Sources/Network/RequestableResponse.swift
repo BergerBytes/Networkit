@@ -16,8 +16,8 @@ extension RequestableResponse {
     
     public static func fetch(given parameters: P, delegate: RequestDelegateConfig?, with networkManager: NetworkManager = .shared, dataCallback: @escaping (Self) -> Void) {
         let requestTask = Self.requestTask(given: parameters, delegate: delegate, dataCallback: dataCallback)
-        
-        if Self.self is CacheableResponse.Type {
+                
+        if Self.self is Cacheable.Type {
             let isExpired = (try? networkManager.storage.isExpiredObject(forKey: requestTask.id)) ?? true
             Debug.log("Is Expired: \(isExpired)")
             if isExpired {
@@ -39,7 +39,7 @@ extension RequestableResponse {
             url: url(given: parameters),
             parameters: parameters,
             headers: headers(given: parameters),
-            cachePolicy: (Self.self as? CacheableResponse.Type)?.cachePolicy,
+            cachePolicy: (Self.self as? Cacheable.Type)?.cachePolicy,
             dataCallback: dataCallback,
             delegate: delegate
         )

@@ -11,12 +11,12 @@ extension String: NetworkParameters {}
 extension Bool: NetworkParameters {}
 
 extension NetworkParameters {
-    public typealias Encodable = EncodableNetworkParameters
-    public typealias URL = URLNetworkParameters
-    public typealias Body = BodyNetworkParameters
+    public typealias Encodable = NetworkParameters & EncodableNetworkParameters
+    public typealias URL = NetworkParameters & URLNetworkParameters
+    public typealias Body = NetworkParameters & BodyNetworkParameters
 }
 
-public protocol EncodableNetworkParameters: NetworkParameters {
+public protocol EncodableNetworkParameters: Encodable {
     func asURL() -> [String: Any]?
     func asBody() -> Data?
 }
@@ -45,7 +45,7 @@ public struct NoParameters: NetworkParameters {
 /// A Network task that should be merged if the same request is found already queued.
 public protocol MergableRequest: QueueableTask {
     var delegate: MulticastDelegate<RequestDelegate> { get }
-    var delegateId: Identifiable? { get }
+    var delegateId: NetworkID? { get }
     
     /// Check for wether or this task should be merged with the provided task.
     /// - Parameter task: The task to merge with.
@@ -68,7 +68,7 @@ public class URLSessionNetworkTask<R: RequestableResponse, P: NetworkParameters>
     private let cachePolicy: CachePolicy?
     public var dataCallbacks = [(R) -> Void]()
     public let delegate = MulticastDelegate<RequestDelegate>()
-    public let delegateId: Identifiable?
+    public let delegateId: NetworkID?
     private let networkManager: NetworkManager
     
     required init(

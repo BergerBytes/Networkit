@@ -20,15 +20,6 @@
         }
       },
       {
-        "package": "QueueTask",
-        "repositoryURL": "https://github.com/BergerBytes/queuetask.git",
-        "state": {
-          "branch": "dev",
-          "revision": "f02f933660f6af033470976984d182ac9c52355c",
-          "version": null
-        }
-      },
-      {
         "package": "Debug",
         "repositoryURL": "https://github.com/BergerBytes/swift-debug.git",
         "state": {
