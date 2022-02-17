@@ -14,15 +14,14 @@ public protocol RequestableResponse: Codable {
 extension RequestableResponse {
     public static func headers(given parameters: P) -> [String: String]? { nil }
     
-    public static func fetch(given parameters: P, delegate: RequestDelegateConfig?, with networkManager: NetworkManager = .shared, dataCallback: @escaping (Self) -> Void) {
+    public static func fetch(given parameters: P, delegate: RequestDelegateConfig?, with networkManager: NetworkManagerProvider = NetworkManager.shared, dataCallback: @escaping (Self) -> Void) {
         let requestTask = Self.requestTask(given: parameters, delegate: delegate, dataCallback: dataCallback)
                 
         if Self.self is Cacheable.Type {
-            let isExpired = (try? networkManager.storage.isExpiredObject(forKey: requestTask.id)) ?? true
-            Debug.log("Is Expired: \(isExpired)")
+            let isExpired = (try? networkManager.isObjectExpired(for: requestTask.id)) ?? true
             if isExpired {
                 networkManager.enqueue(requestTask)
-            } else if let data: Self = (try? networkManager.storage.object(forKey: requestTask.id))?.value as? Self {
+            } else if let data: Self = try? networkManager.get(object: requestTask.id) {
                 dataCallback(data)
             }
         } else {

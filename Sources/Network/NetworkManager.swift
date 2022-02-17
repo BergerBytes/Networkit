@@ -8,19 +8,28 @@ struct ObserverEntry {
     weak var object: AnyObject?
 }
 
-public class NetworkManager {
-    public static let shared = NetworkManager()
+public protocol NetworkManagerProvider {
+    func addObserver(for key: String, on object: AnyObject, dataCallback: @escaping (AnyCodable) -> Void) -> ObserverToken
+    func enqueue(_ task: QueueableTask)
+    func request<T: RequestableResponse>(_ response: T.Type, delegate: RequestDelegateConfig?, dataCallback: @escaping (T) -> Void) where T.P == NoParameters
+    
+    func isObjectExpired(for key: String) throws -> Bool
+    func get<T>(object key: String) throws -> T?
+    func save<T: Encodable>(object: T, key: String, cachePolicy: CachePolicy) throws
+}
+
+public class NetworkManager: NetworkManagerProvider {
+    public static var shared: NetworkManagerProvider = NetworkManager()
     
     static let diskConfig = DiskConfig(
-      name: "com.network.cache",
-      expiry: .seconds(30 * 24 * 60 * 60), // 30 Days
-      maxSize: 100_000_000, // 100mb
-      protectionType: .complete
+        name: "com.network.cache",
+        expiry: .seconds(30 * 24 * 60 * 60), // 30 Days
+        maxSize: 100_000_000, // 100mb
+        protectionType: .complete
     )
     
     static let memoryConfig = MemoryConfig(
-      countLimit: 50,
-      totalCostLimit: 100
+        countLimit: 100
     )
     
     public private(set) lazy var storage = try! Storage<String, AnyCodable>(diskConfig: Self.diskConfig, memoryConfig: Self.memoryConfig, transformer: TransformerFactory.forCodable(ofType: AnyCodable.self))
@@ -64,10 +73,10 @@ public class NetworkManager {
                 
             case .removeAll:
                 break
-
+                
             case .removeExpired:
                 break
-
+                
             }
         }
     }
@@ -101,5 +110,17 @@ public class NetworkManager {
     
     public func request<T: RequestableResponse>(_ response: T.Type, delegate: RequestDelegateConfig?, dataCallback: @escaping (T) -> Void) where T.P == NoParameters {
         enqueue(T.requestTask(delegate: delegate, dataCallback: dataCallback))
+    }
+    
+    public func isObjectExpired(for key: String) throws -> Bool {
+        try storage.isExpiredObject(forKey: key)
+    }
+    
+    public func get<T>(object key: String) throws -> T? {
+        try storage.object(forKey: key).value as? T
+    }
+    
+    public func save<T: Encodable>(object: T, key: String, cachePolicy: CachePolicy) throws {
+        try storage.setObject(.init(object), forKey: key, expiry: cachePolicy.asExpiry())
     }
 }

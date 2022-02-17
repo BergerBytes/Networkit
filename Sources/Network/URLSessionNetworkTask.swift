@@ -69,7 +69,7 @@ public class URLSessionNetworkTask<R: RequestableResponse, P: NetworkParameters>
     public var dataCallbacks = [(R) -> Void]()
     public let delegate = MulticastDelegate<RequestDelegate>()
     public let delegateId: NetworkID?
-    private let networkManager: NetworkManager
+    private let networkManager: NetworkManagerProvider
     
     required init(
         urlSession: URLSession = .shared,
@@ -80,7 +80,7 @@ public class URLSessionNetworkTask<R: RequestableResponse, P: NetworkParameters>
         cachePolicy: CachePolicy?,
         dataCallback: ((R) -> Void)?,
         delegate: RequestDelegateConfig?,
-        networkManager: NetworkManager = .shared
+        networkManager: NetworkManagerProvider = NetworkManager.shared
     ) {
         self.urlSession = urlSession
         
@@ -223,7 +223,7 @@ public class URLSessionNetworkTask<R: RequestableResponse, P: NetworkParameters>
 
         if let cachePolicy = cachePolicy {
             do {
-                try networkManager.storage.setObject(.init(response), forKey: id, expiry: cachePolicy.asExpiry())
+                try networkManager.save(object: response, key: id, cachePolicy: cachePolicy)
             }
             catch {
                 Debug.log(error: error)
