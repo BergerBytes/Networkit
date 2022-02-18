@@ -1,6 +1,7 @@
 import Foundation
-import Debug
 import Cache
+import CryptoKit
+import Debug
 
 public protocol RequestableResponse: Codable {
     associatedtype P: NetworkParameters
@@ -9,6 +10,7 @@ public protocol RequestableResponse: Codable {
     static func url(given parameters: P) -> URL
     static func headers(given parameters: P) -> [String: String]?
     static func handle(response: URLResponse, data: Data?) -> Error?
+    static func generateId(given parameters: P) -> String
 }
 
 extension RequestableResponse {
@@ -42,6 +44,35 @@ extension RequestableResponse {
             dataCallback: dataCallback,
             delegate: delegate
         )
+    }
+    
+    public static func generateId(given parameters: P) -> String {
+        let urlString = url(given: parameters).absoluteString
+        guard
+            let encodedParameters = try? JSONEncoder().encode(parameters),
+            let hash = try? SHA256.hash(data: JSONEncoder().encode([method.rawValue, urlString, String(decoding: encodedParameters, as: UTF8.self)]))
+        else {
+            Debug.log(
+                level: .error,
+                "Failed to runtime agnostically hash a URLSessionNetworkTask id. Falling back to Hasher().",
+                params: [
+                    "Response Type": "\(Self.self)",
+                    "Parameters Type": "\(P.self)",
+                    "URL": "\(urlString)",
+                    "method": method.rawValue,
+                ]
+            )
+            
+            var hasher = Hasher()
+            hasher.combine(method)
+            hasher.combine(urlString)
+            hasher.combine(parameters)
+            
+            return "\(urlString) | \(hasher.finalize())"
+        }
+
+        let stringHash = hash.map { String(format: "%02hhx", $0) }.joined()
+        return "\(urlString) | \(stringHash)"
     }
 }
 

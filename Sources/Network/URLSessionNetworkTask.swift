@@ -45,7 +45,7 @@ public struct NoParameters: NetworkParameters {
 /// A Network task that should be merged if the same request is found already queued.
 public protocol MergableRequest: QueueableTask {
     var delegate: MulticastDelegate<RequestDelegate> { get }
-    var delegateId: NetworkID? { get }
+    var requestIdentifier: RequestIdentifier? { get }
     
     /// Check for wether or this task should be merged with the provided task.
     /// - Parameter task: The task to merge with.
@@ -53,7 +53,7 @@ public protocol MergableRequest: QueueableTask {
     func shouldBeMerged(with task: MergableRequest) -> Bool
 }
 
-public class URLSessionNetworkTask<R: RequestableResponse, P: NetworkParameters>: QueueableTask {
+public class URLSessionNetworkTask<R: RequestableResponse>: QueueableTask {
     enum Errors: Error {
         case invalidURL
         case noResponse
@@ -63,19 +63,19 @@ public class URLSessionNetworkTask<R: RequestableResponse, P: NetworkParameters>
     
     private let method: RequestMethod
     private let url: URL
-    private let parameters: P
+    private let parameters: R.P
     private let headers: [String: String]?
     private let cachePolicy: CachePolicy?
     public var dataCallbacks = [(R) -> Void]()
     public let delegate = MulticastDelegate<RequestDelegate>()
-    public let delegateId: NetworkID?
+    public let requestIdentifier: RequestIdentifier?
     private let networkManager: NetworkManagerProvider
     
     required init(
         urlSession: URLSession = .shared,
         method: RequestMethod,
         url: URL,
-        parameters: P,
+        parameters: R.P,
         headers: [String: String]?,
         cachePolicy: CachePolicy?,
         dataCallback: ((R) -> Void)?,
@@ -93,41 +93,16 @@ public class URLSessionNetworkTask<R: RequestableResponse, P: NetworkParameters>
             self.dataCallbacks.append(dataCallback)
         }
         self.delegate += delegate?.delegate
-        self.delegateId = delegate?.id
+        self.requestIdentifier = delegate?.id
         self.networkManager = networkManager
                 
-        guard
-            let encodedParameters = try? JSONEncoder().encode(parameters),
-            let hash = try? SHA256.hash(data: JSONEncoder().encode([method.rawValue, url.absoluteString, String(decoding: encodedParameters, as: UTF8.self)]))
-        else {
-            Debug.log(
-                level: .error,
-                "Failed to runtime agnostically hash a URLSessionNetworkTask id. Falling back to Hasher().",
-                params: [
-                    "Response Type": "\(R.self)",
-                    "Parameters Type": "\(P.self)",
-                    "URL": "\(url.absoluteString)",
-                    "method": method.rawValue,
-                ]
-            )
-            
-            var hasher = Hasher()
-            hasher.combine(method)
-            hasher.combine(url)
-            hasher.combine(parameters)
-            
-            super.init(id: "\(url) | \(hasher.finalize())", type: .standard)
-            return
-        }
-
-        let stringHash = hash.map { String(format: "%02hhx", $0) }.joined()
-        super.init(id: "\(url) | \(stringHash)", type: .standard)
+        super.init(id: R.generateId(given: parameters), type: .standard)
     }
     
     public override func process() async {
         await super.process()
         
-        delegate.invokeDelegates { $0.requestStarted(id: delegateId) }
+        delegate.invokeDelegates { $0.requestStarted(id: requestIdentifier) }
         
         let encodableParameters = parameters as? EncodableNetworkParameters
                 
@@ -218,7 +193,7 @@ public class URLSessionNetworkTask<R: RequestableResponse, P: NetworkParameters>
     }
     
     open func complete(response: R) {
-        delegate.invokeDelegates { $0.requestCompleted(id: delegateId) }
+        delegate.invokeDelegates { $0.requestCompleted(id: requestIdentifier) }
         dataCallbacks.forEach { $0(response) }
 
         if let cachePolicy = cachePolicy {
@@ -232,7 +207,7 @@ public class URLSessionNetworkTask<R: RequestableResponse, P: NetworkParameters>
     }
     
     open func failed(error: Error) {
-        delegate.invokeDelegates { $0.requestFailed(id: delegateId, error: error) }
+        delegate.invokeDelegates { $0.requestFailed(id: requestIdentifier, error: error) }
     }
 
 }
