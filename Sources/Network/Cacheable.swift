@@ -31,9 +31,18 @@ public enum CachePolicy {
 
 public protocol Cacheable {
     static var cachePolicy: CachePolicy { get }
+    
+    /// Controls if cached data is returned when observing an endpoint if the data is expired.
+    /// If true the observer will recieve the cached data back regardless if it is expired or not, a request will still be made if the data is expired.
+    /// Default value is true.
+    static var returnCachedDataIfExpired: Bool { get }
 }
 
-public protocol CacheableResponse: RequestableResponse, Cacheable { }
+public extension Cacheable {
+    static var returnCachedDataIfExpired: Bool { true }
+}
+
+public typealias CacheableResponse = RequestableResponse & Cacheable
 
 extension Cacheable where Self: RequestableResponse {
     public static func fetch(given parameters: P, delegate: RequestDelegateConfig? = nil, with networkManager: NetworkManagerProvider = NetworkManager.shared) {
@@ -58,22 +67,23 @@ extension Cacheable where Self: RequestableResponse {
         }
         
         let isExpired = try? networkManager.isObjectExpired(for: request.id)
+        
+        // Return any cached data if not expired or expired data is allowed.
+        if isExpired == false || returnCachedDataIfExpired {
+            // Decode the data.
+            if let cachedData: Self = try? networkManager.get(object: request.id) {
+                observer(cachedData)
+            }
+            else if
+                let cachedData: [String: Any] = try? networkManager.get(object: request.id),
+                let decodedData = DictionaryDecoder().decode(Self.self, from: cachedData)
+            {
+                observer(decodedData)
+            }
+        }
+        
         if isExpired != false {
             networkManager.enqueue(request)
-        }
-        
-        // Return any cached data.
-        
-        if
-            let cachedData: Self = try? networkManager.get(object: request.id)
-        {
-            observer(cachedData)
-        }
-        else if
-            let cachedData: [String: Any] = try? networkManager.get(object: request.id),
-            let decodedData = DictionaryDecoder().decode(Self.self, from: cachedData)
-        {
-            observer(decodedData)
         }
         
         return token
