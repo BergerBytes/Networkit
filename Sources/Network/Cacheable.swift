@@ -14,7 +14,7 @@ public enum CachePolicy {
     func asExpiry() -> Expiry? {
         switch self {
         case .never:
-            return nil
+            return .seconds(0)
             
         case let .timed(days, hours, minutes):
             let daysToSeconds = days * 24 * 60 * 60
