@@ -4,17 +4,21 @@ import Cache
 import AnyCodable
 
 public enum CachePolicy {
+    /// The object will be put in cache but expire immediately.
+    /// - Note: This is useful for ensuring data is always returned from cache while still triggering a request.
     case never
     
-    /// A timed cache policy
+    /// A timed cache policy.
     /// - Warning: Passing a timed policy with all values set to 0 is not allowed.
     case timed(days: Int = 0, hours: Int = 0, minutes: Int = 0)
+    
+    /// The cache will never expire.
     case forever
     
     func asExpiry() -> Expiry? {
         switch self {
         case .never:
-            return nil
+            return .seconds(0)
             
         case let .timed(days, hours, minutes):
             let daysToSeconds = days * 24 * 60 * 60
@@ -33,7 +37,7 @@ public protocol Cacheable {
     static var cachePolicy: CachePolicy { get }
     
     /// Controls if cached data is returned when observing an endpoint if the data is expired.
-    /// If true the observer will recieve the cached data back regardless if it is expired or not, a request will still be made if the data is expired.
+    /// If true the observer will receive the cached data back regardless if it is expired or not, a request will still be made if the data is expired.
     /// Default value is true.
     static var returnCachedDataIfExpired: Bool { get }
 }
