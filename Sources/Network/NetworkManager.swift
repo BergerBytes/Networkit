@@ -17,7 +17,7 @@ public protocol NetworkManagerProvider {
     func save<T: Encodable>(object: T, key: String, cachePolicy: CachePolicy) throws
     
     func isObjectExpired(for key: String) throws -> Bool
-    func expiry(for key: String) throws -> Expiry
+    func expiryDate(for key: String) throws -> Date
     
     func remove(object key: String) throws
     func removeExpiredObjects() throws
@@ -130,8 +130,8 @@ public class NetworkManager: NetworkManagerProvider {
         try storage.isExpiredObject(forKey: key)
     }
     
-    public func expiry(for key: String) throws -> Expiry {
-        try storage.expiryForObject(forKey: key)
+    public func expiryDate(for key: String) throws -> Date {
+        try storage.expiryForObject(forKey: key).date
     }
     
     public func removeExpiredObjects() throws {

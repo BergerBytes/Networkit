@@ -52,7 +52,7 @@ extension Cacheable where Self: Requestable {
         
         // If the new cache policy would expire before the existing cached expiry date, set isExpired to true.
         if
-            let cacheExpiryDate = try? networkManager.expiry(for: request.id).date,
+            let cacheExpiryDate = try? networkManager.expiryDate(for: request.id),
             let newExpiryDate = Self.cachePolicy.asExpiry()?.date,
             cacheExpiryDate.distance(to: newExpiryDate) < 0
         {
