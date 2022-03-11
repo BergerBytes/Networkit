@@ -21,7 +21,7 @@ let package = Package(
             "1.4.0"..<"1.5.0"
         ),
         .package(
-            url: "https://github.com/hyperoslo/Cache",
+            url: "https://github.com/BergerBytes/Cache",
             "6.0.0"..<"6.1.0"
         ),
         .package(

@@ -10,7 +10,7 @@ public enum CachePolicy {
     
     /// A timed cache policy.
     /// - Warning: Passing a timed policy with all values set to 0 is not allowed.
-    case timed(days: Int = 0, hours: Int = 0, minutes: Int = 0)
+    case timed(days: Int = 0, hours: Int = 0, minutes: Int = 0, seconds: Int = 0)
     
     /// The cache will never expire.
     case forever
@@ -20,12 +20,12 @@ public enum CachePolicy {
         case .never:
             return .seconds(0)
             
-        case let .timed(days, hours, minutes):
+        case let .timed(days, hours, minutes, seconds):
             let daysToSeconds = days * 24 * 60 * 60
             let hoursToSeconds = hours * 60 * 60
             let minutesToSeconds = minutes * 60
             
-            return .seconds(.init(daysToSeconds + hoursToSeconds + minutesToSeconds))
+            return .seconds(.init(daysToSeconds + hoursToSeconds + minutesToSeconds + seconds))
             
         case .forever:
             return .never
@@ -77,8 +77,17 @@ extension Cacheable where Self: Requestable {
         }
         
         observer = observerToken
+                                
+        var isExpired = (try? networkManager.isObjectExpired(for: request.id)) ?? true
         
-        var isExpired = try? networkManager.isObjectExpired(for: request.id)
+        // If the new cache policy would expire before the existing cached expiry date, set isExpired to true.
+        if
+            let cacheExpiryDate = try? networkManager.expiry(for: request.id).date,
+            let newExpiryDate = Self.cachePolicy.asExpiry()?.date,
+            cacheExpiryDate.distance(to: newExpiryDate) < 0
+        {
+            isExpired = true
+        }
         
         // Return any cached data if not expired or expired data is allowed.
         if isExpired == false || returnCachedDataIfExpired {
@@ -90,13 +99,13 @@ extension Cacheable where Self: Requestable {
                 let decodedData = DictionaryDecoder().decode(Self.self, from: cachedData)
             {
                 dataCallback(decodedData)
-            } else {
+            } else { // if the data is unable to be decoded, set isExpired to true and delete the cached object.
                 isExpired = true
                 try? networkManager.remove(object: request.id)
             }
         }
         
-        if isExpired != false {
+        if isExpired {
             networkManager.enqueue(request)
         }
         

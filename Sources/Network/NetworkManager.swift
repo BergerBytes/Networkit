@@ -13,9 +13,11 @@ public protocol NetworkManagerProvider {
     func enqueue(_ task: QueueableTask)
     func request<T: Requestable>(_ response: T.Type, delegate: RequestDelegateConfig?, dataCallback: @escaping (T) -> Void) where T.P == NoParameters
     
-    func isObjectExpired(for key: String) throws -> Bool
     func get<T>(object key: String) throws -> T?
     func save<T: Encodable>(object: T, key: String, cachePolicy: CachePolicy) throws
+    
+    func isObjectExpired(for key: String) throws -> Bool
+    func expiry(for key: String) throws -> Expiry
     
     func remove(object key: String) throws
     func removeExpiredObjects() throws
@@ -48,7 +50,7 @@ public class NetworkManager: NetworkManagerProvider {
             case .add(let key):
                 storage.async.entry(forKey: key) { result in
                     switch result {
-                    case .value(let data):
+                    case let .success(data):
                         self.observerQueue.async {
                             var entries = self.observers[key] ?? []
                             for (index, entry) in entries.enumerated().reversed() {
@@ -67,7 +69,7 @@ public class NetworkManager: NetworkManagerProvider {
                             self.observers[key] = entries
                         }
                         
-                    case .error(let error):
+                    case let .failure(error):
                         Debug.log(level: .error, "Failed to get item", params: ["Key": key, "Error" : error.localizedDescription])
                     }
                 }
@@ -116,16 +118,20 @@ public class NetworkManager: NetworkManagerProvider {
         enqueue(T.requestTask(delegate: delegate, dataCallback: dataCallback))
     }
     
-    public func isObjectExpired(for key: String) throws -> Bool {
-        try storage.isExpiredObject(forKey: key)
-    }
-    
     public func get<T>(object key: String) throws -> T? {
         try storage.object(forKey: key).value as? T
     }
     
     public func save<T: Encodable>(object: T, key: String, cachePolicy: CachePolicy) throws {
         try storage.setObject(.init(object), forKey: key, expiry: cachePolicy.asExpiry())
+    }
+    
+    public func isObjectExpired(for key: String) throws -> Bool {
+        try storage.isExpiredObject(forKey: key)
+    }
+    
+    public func expiry(for key: String) throws -> Expiry {
+        try storage.expiryForObject(forKey: key)
     }
     
     public func removeExpiredObjects() throws {
