@@ -32,6 +32,9 @@ public extension QueryNetworkParameters {
 }
 
 /// Encodes all properties into the request body as JSON.
+///
+/// - Note: By default the parameters will be encoded using a `JSONEncoder`,
+/// this can be changed by implementing the `encoder` property.
 public protocol BodyNetworkParameters: NetworkParameters {
     static var encoder: RequestBodyEncoder { get }
 }

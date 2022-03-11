@@ -11,7 +11,7 @@ struct ObserverEntry {
 public protocol NetworkManagerProvider {
     func addObserver(for key: String, on object: AnyObject, dataCallback: @escaping (AnyCodable) -> Void) -> ObserverToken
     func enqueue(_ task: QueueableTask)
-    func request<T: RequestableResponse>(_ response: T.Type, delegate: RequestDelegateConfig?, dataCallback: @escaping (T) -> Void) where T.P == NoParameters
+    func request<T: Requestable>(_ response: T.Type, delegate: RequestDelegateConfig?, dataCallback: @escaping (T) -> Void) where T.P == NoParameters
     
     func isObjectExpired(for key: String) throws -> Bool
     func get<T>(object key: String) throws -> T?
@@ -112,7 +112,7 @@ public class NetworkManager: NetworkManagerProvider {
         operationQueue.addOperation(task.newOperation())
     }
     
-    public func request<T: RequestableResponse>(_ response: T.Type, delegate: RequestDelegateConfig?, dataCallback: @escaping (T) -> Void) where T.P == NoParameters {
+    public func request<T: Requestable>(_ response: T.Type, delegate: RequestDelegateConfig?, dataCallback: @escaping (T) -> Void) where T.P == NoParameters {
         enqueue(T.requestTask(delegate: delegate, dataCallback: dataCallback))
     }
     

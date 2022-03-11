@@ -13,9 +13,7 @@ class DictionaryEncoder {
 
 class DictionaryDecoder {
     func decode<T: Decodable>(_ type: T.Type, from value: [String: Any]) -> T? {
-        guard
-            let jsonData = try? JSONSerialization.data(withJSONObject: value, options: .fragmentsAllowed)
-        else {
+        guard let jsonData = try? JSONSerialization.data(withJSONObject: value, options: .fragmentsAllowed) else {
             return nil
         }
         

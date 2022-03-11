@@ -3,17 +3,58 @@ import Cache
 import CryptoKit
 import Debug
 
-public protocol RequestableResponse: Codable {
+public protocol Requestable: Codable {
     associatedtype P: NetworkParameters
     
+    static var decoder: ResponseDecoder { get }
+    
     static var method: RequestMethod { get }
-    static func url(given parameters: P) -> URL
+    
+    /// The scheme subcomponent of the URL. Defaults to "https"
+    ///
+    /// The getter for this property removes any percent encoding this component may have (if the component allows percent encoding).
+    /// Setting this property assumes the subcomponent or component string is not percent encoded and will add percent encoding (if the component allows percent encoding).
+    /// Attempting to set the scheme with an invalid scheme string will cause an exception.
+    static var scheme: String { get }
+    
+    /// The host subcomponent. Example: "www.apple.com"
+    ///
+    /// - Attention: Don't include any path separators.
+    ///
+    /// The getter for this property removes any percent encoding this component may have (if the component allows percent encoding).
+    /// Setting this property assumes the subcomponent or component string is not percent encoded and will add percent encoding (if the component allows percent encoding).
+    static var host: String { get }
+    
+    /// The path subcomponent.
+    ///
+    /// The getter for this property removes any percent encoding this component may have (if the component allows percent encoding).
+    /// Setting this property assumes the subcomponent or component string is not percent encoded and will add percent encoding (if the component allows percent encoding).
+    static func path(given parameters: P) -> URLPath?
+    
     static func headers(given parameters: P) -> [String: String]?
     static func handle(response: URLResponse, data: Data?) -> Error?
     static func generateId(given parameters: P) -> String
 }
 
-extension RequestableResponse {
+public extension Requestable {
+    static var scheme: String { "https" }
+    static var decoder: ResponseDecoder { JSONDecoder() }
+
+    static func url(given parameters: P) -> URL {
+        var components = URLComponents()
+        components.scheme = scheme
+        components.host = host
+        components.path = path(given: parameters)?.pathString ?? ""
+                
+        guard let url = components.url else {
+            fatalError("Failed to create valid URL. \(dump(components))")
+        }
+        
+        return url
+    }    
+}
+
+extension Requestable {
     public static func headers(given parameters: P) -> [String: String]? { nil }
     
     public static func fetch(given parameters: P, delegate: RequestDelegateConfig?, with networkManager: NetworkManagerProvider = NetworkManager.shared, dataCallback: @escaping (Self) -> Void) {
@@ -76,7 +117,7 @@ extension RequestableResponse {
     }
 }
 
-extension RequestableResponse where P == NoParameters {
+extension Requestable where P == NoParameters {
     /// Create a URLSessionNetworkTask for a request response without any parameter requirements.
     /// - Returns: The URL session task. (QueueableTask)
     public static func requestTask(delegate: RequestDelegateConfig?, dataCallback: @escaping (_ data: Self) -> Void) -> QueueableTask {

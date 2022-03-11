@@ -2,7 +2,7 @@ import CryptoKit
 import Debug
 import Foundation
 
-public class URLSessionNetworkTask<R: RequestableResponse>: QueueableTask {
+public class URLSessionNetworkTask<R: Requestable>: QueueableTask {
     enum Errors: Error {
         case invalidURL
         case noResponse
@@ -93,7 +93,7 @@ public class URLSessionNetworkTask<R: RequestableResponse>: QueueableTask {
                     return
                 }
                 
-                let decodedData = try JSONDecoder().decode(R.self, from: data)
+                let decodedData = try R.decoder.decode(R.self, from: data)
                 complete(response: decodedData)
             } else {
                 let task = urlSession.dataTask(with: urlRequest) { data, response, error in
@@ -119,7 +119,7 @@ public class URLSessionNetworkTask<R: RequestableResponse>: QueueableTask {
                             return
                         }
                         
-                        let decodedData = try JSONDecoder().decode(R.self, from: data)
+                        let decodedData = try R.decoder.decode(R.self, from: data)
                         self.complete(response: decodedData)
                     }
                     catch {

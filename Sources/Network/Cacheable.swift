@@ -46,18 +46,24 @@ public extension Cacheable {
     static var returnCachedDataIfExpired: Bool { true }
 }
 
-public typealias CacheableResponse = RequestableResponse & Cacheable
+public typealias CacheableResponse = Requestable & Cacheable
 
-extension Cacheable where Self: RequestableResponse {
+extension Cacheable where Self: Requestable {
     public static func fetch(given parameters: P, delegate: RequestDelegateConfig? = nil, with networkManager: NetworkManagerProvider = NetworkManager.shared) {
         fetch(given: parameters, delegate: delegate, with: networkManager, dataCallback: { _ in })
     }
     
     @discardableResult
-    public static func observe(on object: AnyObject, given parameters: P, delegate: RequestDelegateConfig?, with networkManager: NetworkManagerProvider = NetworkManager.shared, observer: @escaping (_ data: Self) -> Void) -> ObserverToken {
+    public static func observe(on object: AnyObject, given parameters: P, delegate: RequestDelegateConfig?, dataCallback: @escaping (_ data: Self) -> Void) -> ObserverToken {
+        var observer: ObserverToken?
+        return observe(on: object, given: parameters, observer: &observer, delegate: delegate, dataCallback: dataCallback)
+    }
+    
+    @discardableResult
+    public static func observe(on object: AnyObject, given parameters: P, observer: inout ObserverToken?, delegate: RequestDelegateConfig?, with networkManager: NetworkManagerProvider = NetworkManager.shared, dataCallback: @escaping (_ data: Self) -> Void) -> ObserverToken {
         let request = Self.requestTask(given: parameters, delegate: delegate, dataCallback: { _ in })
-                
-        let token = networkManager.addObserver(for: request.id, on: object) { data in
+        
+        let observerToken = networkManager.addObserver(for: request.id, on: object) { data in
             guard
                 let value = data.value as? Self
             else {
@@ -66,23 +72,27 @@ extension Cacheable where Self: RequestableResponse {
             }
             
             DispatchQueue.main.async {
-                observer(value)
+                dataCallback(value)
             }
         }
         
-        let isExpired = try? networkManager.isObjectExpired(for: request.id)
+        observer = observerToken
+        
+        var isExpired = try? networkManager.isObjectExpired(for: request.id)
         
         // Return any cached data if not expired or expired data is allowed.
         if isExpired == false || returnCachedDataIfExpired {
             // Decode the data.
             if let cachedData: Self = try? networkManager.get(object: request.id) {
-                observer(cachedData)
-            }
-            else if
+                dataCallback(cachedData)
+            } else if
                 let cachedData: [String: Any] = try? networkManager.get(object: request.id),
                 let decodedData = DictionaryDecoder().decode(Self.self, from: cachedData)
             {
-                observer(decodedData)
+                dataCallback(decodedData)
+            } else {
+                isExpired = true
+                try? networkManager.remove(object: request.id)
             }
         }
         
@@ -90,14 +100,20 @@ extension Cacheable where Self: RequestableResponse {
             networkManager.enqueue(request)
         }
         
-        return token
+        return observerToken
     }
 }
 
-extension Cacheable where Self: RequestableResponse, Self.P == NoParameters {
+extension Cacheable where Self: Requestable, Self.P == NoParameters {
     @discardableResult
-    public static func observe(on object: AnyObject, delegate: RequestDelegateConfig?, observer: @escaping (_ data: Self) -> Void) -> ObserverToken {
-        observe(on: object, given: .none, delegate: delegate, observer: observer)
+    public static func observe(on object: AnyObject, observer: inout ObserverToken?, delegate: RequestDelegateConfig?, dataCallback: @escaping (_ data: Self) -> Void) -> ObserverToken {
+        observe(on: object, given: .none, observer: &observer, delegate: delegate, dataCallback: dataCallback)
+    }
+    
+    @discardableResult
+    public static func observe(on object: AnyObject, delegate: RequestDelegateConfig?, dataCallback: @escaping (_ data: Self) -> Void) -> ObserverToken {
+        var observer: ObserverToken?
+        return observe(on: object, given: .none, observer: &observer, delegate: delegate, dataCallback: dataCallback)
     }
     
     public static func fetch(delegate: RequestDelegateConfig?, with networkManager: NetworkManagerProvider = NetworkManager.shared, force: Bool = false) {
