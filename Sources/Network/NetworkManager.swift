@@ -16,6 +16,8 @@ public protocol NetworkManagerProvider {
     func isObjectExpired(for key: String) throws -> Bool
     func get<T>(object key: String) throws -> T?
     func save<T: Encodable>(object: T, key: String, cachePolicy: CachePolicy) throws
+    
+    func remove(object key: String) throws
     func removeExpiredObjects() throws
     func removeAllObjects() throws
 }
@@ -132,5 +134,9 @@ public class NetworkManager: NetworkManagerProvider {
     
     public func removeAllObjects() throws {
         try storage.removeAll()
+    }
+    
+    public func remove(object key: String) throws {
+        try storage.removeObject(forKey: key)
     }
 }
