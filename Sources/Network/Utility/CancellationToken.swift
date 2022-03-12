@@ -1,6 +1,6 @@
 import Cache
 
-public class ObserverToken {
+public class CancellationToken {
     private let cancellationClosure: () -> Void
     
     public init(cancellationClosure: @escaping () -> Void) {

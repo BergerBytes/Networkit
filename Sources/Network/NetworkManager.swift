@@ -9,7 +9,7 @@ struct ObserverEntry {
 }
 
 public protocol NetworkManagerProvider {
-    func addObserver(for key: String, on object: AnyObject, dataCallback: @escaping (AnyCodable) -> Void) -> ObserverToken
+    func addObserver(for key: String, on object: AnyObject, dataCallback: @escaping (AnyCodable) -> Void) -> CancellationToken
     func enqueue(_ task: QueueableTask)
     func request<T: Requestable>(_ response: T.Type, delegate: RequestDelegateConfig?, dataCallback: @escaping (T) -> Void) where T.P == NoParameters
     
@@ -87,12 +87,12 @@ public class NetworkManager: NetworkManagerProvider {
         }
     }
     
-    public func addObserver(for key: String, on object: AnyObject, dataCallback: @escaping (AnyCodable) -> Void) -> ObserverToken {
+    public func addObserver(for key: String, on object: AnyObject, dataCallback: @escaping (AnyCodable) -> Void) -> CancellationToken {
         observerQueue.async {
             self.observers[key, default: []].append(.init(callback: dataCallback, object: object))
         }
         
-        return ObserverToken { [weak self] in
+        return CancellationToken { [weak self] in
             self?.observerQueue.async {
                 self?.observers.removeValue(forKey: key)
             }

@@ -12,11 +12,11 @@
       },
       {
         "package": "Cache",
-        "repositoryURL": "https://github.com/hyperoslo/Cache",
+        "repositoryURL": "https://github.com/BergerBytes/Cache",
         "state": {
           "branch": null,
-          "revision": "c7f4d633049c3bd649a353bad36f6c17e9df085f",
-          "version": "6.0.0"
+          "revision": "cf48ec6bfaf86e52c523cd749e605fa29c4eaef5",
+          "version": "6.0.1"
         }
       },
       {
