@@ -22,7 +22,7 @@ let package = Package(
         ),
         .package(
             url: "https://github.com/BergerBytes/Cache",
-            "6.0.0"..<"6.1.0"
+            "6.0.1"..<"6.1.0"
         ),
         .package(
             url: "https://github.com/Flight-School/AnyCodable",
