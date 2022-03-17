@@ -12,6 +12,10 @@ public protocol Cacheable {
     static var returnCachedDataIfExpired: Bool { get }
 }
 
+enum CacheableError: Error {
+    case failedToDecode
+}
+
 public extension Cacheable {
     static var returnCachedDataIfExpired: Bool { true }
 }
@@ -63,15 +67,11 @@ extension Cacheable where Self: Requestable {
         
         // Return any cached data if not expired or expired data is allowed.
         if isExpired == false || returnCachedDataIfExpired {
-            // Decode the data.
-            if let cachedData: Self = try? networkManager.get(object: request.id) {
-                dataCallback(cachedData)
-            } else if
-                let cachedData: [String: Any] = try? networkManager.get(object: request.id),
-                let decodedData = DictionaryDecoder().decode(Self.self, from: cachedData)
-            {
-                dataCallback(decodedData)
-            } else { // if the data is unable to be decoded, set isExpired to true and delete the cached object.
+            switch cachedData(for: request.id, with: networkManager) {
+            case let .success(data):
+                dataCallback(data)
+                
+            case .failure: // if the data is unable to be decoded, set isExpired to true and delete the cached object.
                 isExpired = true
                 try? networkManager.remove(object: request.id)
             }
@@ -82,6 +82,17 @@ extension Cacheable where Self: Requestable {
         }
         
         return observerToken
+    }
+    
+    /// Ensures valid data exists for the given requestable. If no cache data is found or it fails to decode the data will be fetched in the background.
+    /// - Parameters:
+    ///   - parameters: The parameters for the requestable.
+    ///   - networkManager: Injected network manager.
+    public static func fillCache(given parameters: P, with networkManager: NetworkManagerProvider = NetworkManager.shared) {
+        let request = Self.requestTask(given: parameters, delegate: nil, dataCallback: nil)
+        if case .failure = cachedData(for: request.id, with: networkManager) {
+            networkManager.enqueue(request)
+        }
     }
 }
 
@@ -108,6 +119,30 @@ extension Cacheable where Self: Requestable, Self.P == NoParameters {
         Debug.log("Is Expired: \(isExpired)")
         if isExpired || force {
             networkManager.enqueue(requestTask)
+        }
+    }
+    
+    /// NoParameters convenience version of of ``fillCache(given:with:)``
+    public static func fillCache(with networkManager: NetworkManagerProvider = NetworkManager.shared) {
+        let request = Self.requestTask(given: .none, delegate: nil, dataCallback: nil)
+        if case .failure = cachedData(for: request.id, with: networkManager) {
+            networkManager.enqueue(request)
+        }
+    }
+}
+
+extension Cacheable where Self: Requestable {
+    /// Returns any cached data found in storage regardless of it's expiration.
+    private static func cachedData(for id: String, with networkManager: NetworkManagerProvider) -> Result<Self, Error> {
+        if let cachedData: Self = try? networkManager.get(object: id) {
+            return .success(cachedData)
+        } else if
+            let cachedData: [String: Any] = try? networkManager.get(object: id),
+            let decodedData = DictionaryDecoder().decode(Self.self, from: cachedData)
+        {
+            return .success(decodedData)
+        } else {
+            return .failure(CacheableError.failedToDecode)
         }
     }
 }

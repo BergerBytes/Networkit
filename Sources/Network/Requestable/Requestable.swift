@@ -75,7 +75,7 @@ extension Requestable {
     /// Create a URLSessionNetworkTask for a request response.
     /// - Parameter parameters: The parameters for the network response.
     /// - Returns: A URL session task. (QueueableTask)
-    public static func requestTask(given parameters: P, delegate: RequestDelegateConfig?, dataCallback: @escaping (Self) -> Void) -> QueueableTask {
+    public static func requestTask(given parameters: P, delegate: RequestDelegateConfig?, dataCallback: ((Self) -> Void)?) -> QueueableTask {
         URLSessionNetworkTask(
             method: method,
             url: url(given: parameters),
