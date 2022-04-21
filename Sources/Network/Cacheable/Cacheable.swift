@@ -134,11 +134,18 @@ extension Cacheable where Self: Requestable, Self.P == NoParameters {
 extension Cacheable where Self: Requestable {
     /// Returns any cached data found in storage regardless of it's expiration.
     private static func cachedData(for id: String, with networkManager: NetworkManagerProvider) -> Result<Self, Error> {
-        if let cachedData: Self = try? networkManager.get(object: id) {
+        Self.cachedData(type: Self.self, for: id, with: networkManager)
+    }
+}
+
+extension Cacheable {
+    /// Returns any cached data found in storage regardless of it's expiration.
+    internal static func cachedData<T: Requestable>(type: T.Type, for id: String, with networkManager: NetworkManagerProvider) -> Result<T, Error> {
+        if let cachedData: T = try? networkManager.get(object: id) {
             return .success(cachedData)
         } else if
             let cachedData: [String: Any] = try? networkManager.get(object: id),
-            let decodedData = DictionaryDecoder().decode(Self.self, from: cachedData)
+            let decodedData = DictionaryDecoder().decode(T.self, from: cachedData)
         {
             return .success(decodedData)
         } else {
