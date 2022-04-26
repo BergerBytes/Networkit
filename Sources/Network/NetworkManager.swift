@@ -4,6 +4,7 @@ import Debug
 import AnyCodable
 
 struct ObserverEntry {
+    let cancelTokenId: UUID
     let callback: (AnyCodable) -> Void
     weak var object: AnyObject?
 }
@@ -88,13 +89,16 @@ public class NetworkManager: NetworkManagerProvider {
     }
     
     public func addObserver(for key: String, on object: AnyObject, dataCallback: @escaping (AnyCodable) -> Void) -> CancellationToken {
-        observerQueue.async {
-            self.observers[key, default: []].append(.init(callback: dataCallback, object: object))
+        // Create a cancelTokenId to match up observer entry when canceling.
+        let cancelTokenId = UUID.init()
+        
+        observerQueue.async { [cancelTokenId] in
+            self.observers[key, default: []].append(.init(cancelTokenId: cancelTokenId, callback: dataCallback, object: object))
         }
         
-        return CancellationToken { [weak self] in
+        return CancellationToken { [weak self, cancelTokenId] in
             self?.observerQueue.async {
-                self?.observers.removeValue(forKey: key)
+                self?.observers[key, default: []].removeAll(where: { $0.cancelTokenId == cancelTokenId })
             }
         }
     }
