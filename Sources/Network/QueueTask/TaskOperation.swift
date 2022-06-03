@@ -4,6 +4,7 @@ import Foundation
 class TaskOperation: Operation {
     private let lockQueue = DispatchQueue(label: "com.queuetask.taskoperation", attributes: .concurrent)
 
+    var id: String { task.id }
     let task: QueueableTask
     
     override var isAsynchronous: Bool {
@@ -13,7 +14,7 @@ class TaskOperation: Operation {
     internal init(task: QueueableTask) {
         self.task = task
         super.init()
-        queuePriority = task.priorty
+        queuePriority = task.priority
     }
     
     @available(*, unavailable, message: "TaskOperations should never be started directly!")
@@ -37,7 +38,7 @@ class TaskOperation: Operation {
     }
     
     override var description: String {
-        "Operation for Task: \"\(task.id)\""
+        "Operation: STARTED: \(isExecuting), PRIORITY: \(queuePriority.description) \"\(task.id.components(separatedBy: ".com").last!.split(separator: "|").first!.replacingOccurrences(of: " ", with: ""))\""
     }
     
     private var _isExecuting: Bool = false

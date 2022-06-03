@@ -46,6 +46,10 @@ public class URLSessionNetworkTask<R: Requestable>: QueueableTask {
         self.networkManager = networkManager
                 
         super.init(id: R.generateId(given: parameters), type: .standard)
+        
+        if self.dataCallbacks.isEmpty {
+            priority = .veryLow
+        }
     }
     
     public override func process() async {
@@ -156,7 +160,6 @@ public class URLSessionNetworkTask<R: Requestable>: QueueableTask {
     open func failed(error: Error) {
         delegate.invokeDelegates { $0.requestFailed(id: requestIdentifier, error: error) }
     }
-
 }
 
 // MARK: - MergableRequest
@@ -165,5 +168,13 @@ extension URLSessionNetworkTask: MergableRequest {
     public func shouldBeMerged(with task: MergableRequest) -> Bool {
         guard let task = task as? Self else { return false }
         return id == task.id
+    }
+}
+
+// MARK: - CustomDebugStringConvertible
+
+extension URLSessionNetworkTask: CustomDebugStringConvertible {
+    public var debugDescription: String {
+        "\(id) | \(priority)"
     }
 }

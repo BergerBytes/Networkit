@@ -30,20 +30,22 @@ public class NetworkManager: NetworkManagerProvider {
     
     static let diskConfig = DiskConfig(
         name: "com.network.cache",
-        expiry: .seconds(30 * 24 * 60 * 60), // 30 Days
-        maxSize: 100_000_000, // 100mb
-        protectionType: .complete
+        expiry: .seconds(0),
+        maxSize: 100_000_000 // 100mb
     )
     
-    static let memoryConfig = MemoryConfig(
-        countLimit: 100
-    )
+    static let memoryConfig = MemoryConfig()
     
     public private(set) lazy var storage = try! Storage<String, AnyCodable>(diskConfig: Self.diskConfig, memoryConfig: Self.memoryConfig, transformer: TransformerFactory.forCodable(ofType: AnyCodable.self))
     private(set) var observers = [String: [ObserverEntry]]()
     private let observerQueue = DispatchQueue(label: "com.network.observerQueue")
     
-    private let operationQueue = OperationQueue()
+    private var operations = NSHashTable<TaskOperation>.weakObjects()
+    private let operationQueue: OperationQueue = {
+        let queue = OperationQueue()
+        queue.maxConcurrentOperationCount = 10
+        return queue
+    }()
     
     init() {
         storage.addStorageObserver(self) { observer, storage, change in
@@ -68,6 +70,12 @@ public class NetworkManager: NetworkManagerProvider {
                             }
                             
                             self.observers[key] = entries
+                            
+                            if entries.isEmpty {
+                                self.operations
+                                    .allObjects.first(where: { $0.task.id == key })?
+                                    .queuePriority = .veryLow
+                            }
                         }
                         
                     case let .failure(error):
@@ -99,23 +107,56 @@ public class NetworkManager: NetworkManagerProvider {
         return CancellationToken { [weak self, cancelTokenId] in
             self?.observerQueue.async {
                 self?.observers[key, default: []].removeAll(where: { $0.cancelTokenId == cancelTokenId })
+                if self?.observers[key]?.isEmpty == true {
+                    self?.operations
+                        .allObjects.first(where: { $0.task.id == key })?
+                        .queuePriority = .veryLow
+                }
             }
         }
     }
     
     public func enqueue(_ task: QueueableTask) {
-        if
-            let task = task as? MergableRequest,
-            let existingTask = self.operationQueue.operations
-                .filter({ !$0.isFinished && !$0.isCancelled })
-                .compactMap({ ($0 as? TaskOperation)?.task as? MergableRequest})
-                .first(where: { task.shouldBeMerged(with: $0) })
-        {
-            existingTask.delegate += task.delegate
-            return
+        observerQueue.async {
+            if
+                let task = task as? MergableRequest,
+                let existingTask = self.operations.allObjects
+                    .filter({ !$0.isFinished && !$0.isCancelled })
+                    .compactMap({ $0.task as? MergableRequest})
+                    .first(where: { task.shouldBeMerged(with: $0) })
+            {
+                existingTask.delegate += task.delegate
+                let operation = self.operations.allObjects.first(where: { $0.id == existingTask.id })
+                operation?.queuePriority = operation?.queuePriority.increment() ?? .normal
+                return
+            }
+            
+            let operation = task.newOperation()
+            operation.completionBlock = { [weak operation] in
+                self.observerQueue.async {
+                    self.operations.remove(operation)
+                    self.log()
+                }
+            }
+            
+            self.operations.add(operation)
+            self.operationQueue.addOperation(operation)
+            
+            self.log()
+        }
+    }
+    
+    private func log() {
+        var log = "[\n"
+        
+        operations.allObjects
+            .sorted(by: { one, two in one.isExecuting })
+            .forEach { op in
+            log += op.description + "\n"
         }
         
-        operationQueue.addOperation(task.newOperation())
+        log += "]"
+        Debug.log(log)
     }
     
     public func request<T: Requestable>(_ response: T.Type, delegate: RequestDelegateConfig?, dataCallback: @escaping (T) -> Void) where T.P == NoParameters {
