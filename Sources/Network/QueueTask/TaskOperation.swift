@@ -13,7 +13,7 @@ class TaskOperation: Operation {
     internal init(task: QueueableTask) {
         self.task = task
         super.init()
-        queuePriority = task.priorty
+        queuePriority = task.priority
     }
     
     @available(*, unavailable, message: "TaskOperations should never be started directly!")

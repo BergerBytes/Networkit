@@ -1,5 +1,4 @@
 import Foundation
-import AnyCodable
 
 class DictionaryEncoder {
     private let jsonEncoder = JSONEncoder()

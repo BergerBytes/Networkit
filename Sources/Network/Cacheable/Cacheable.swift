@@ -1,7 +1,6 @@
 import Foundation
 import Debug
 import Cache
-import AnyCodable
 
 public protocol Cacheable {
     static var cachePolicy: CachePolicy { get }
@@ -35,25 +34,30 @@ extension Cacheable where Self: Requestable {
     
     @discardableResult
     public static func observe(on object: AnyObject, given parameters: P, token: inout CancellationToken?, delegate: RequestDelegateConfig?, with networkManager: NetworkManagerProvider = NetworkManager.shared, dataCallback: @escaping (_ data: Self) -> Void) -> CancellationToken {
-        token?.cancel()
-        
         let request = Self.requestTask(given: parameters, delegate: delegate, dataCallback: { _ in })
         
-        let observerToken = networkManager.addObserver(for: request.id, on: object) { data in
-            guard
-                let value = data.value as? Self
-            else {
-                Debug.log(level: .error, "Type mismatch", params: ["Expected Type" : Self.self])
-                return
+        // If there is an existing token we can compare the requestKey with our new request id and avoid returning identical data.
+        let duplicateRequest = token != nil && request.id == token?.requestKey
+        
+        if !duplicateRequest {
+            token?.cancel()
+            
+            let observerToken = networkManager.addObserver(for: request.id, on: object) { data in
+                guard
+                    let value = try? Self.decoder.decode(Self.self, from: data)
+                else {
+                    Debug.log(level: .error, "Type mismatch", params: ["Expected Type" : Self.self])
+                    return
+                }
+                
+                DispatchQueue.main.async {
+                    dataCallback(value)
+                }
             }
             
-            DispatchQueue.main.async {
-                dataCallback(value)
-            }
+            token = observerToken
         }
         
-        token = observerToken
-                                
         var isExpired = (try? networkManager.isObjectExpired(for: request.id)) ?? true
         
         // If the new cache policy would expire before the existing cached expiry date, set isExpired to true.
@@ -66,7 +70,7 @@ extension Cacheable where Self: Requestable {
         }
         
         // Return any cached data if not expired or expired data is allowed.
-        if isExpired == false || returnCachedDataIfExpired {
+        if !duplicateRequest && (isExpired == false || returnCachedDataIfExpired) {
             switch cachedData(for: request.id, with: networkManager) {
             case let .success(data):
                 dataCallback(data)
@@ -81,7 +85,7 @@ extension Cacheable where Self: Requestable {
             networkManager.enqueue(request)
         }
         
-        return observerToken
+        return token!
     }
     
     /// Ensures valid data exists for the given requestable. If no cache data is found or it fails to decode the data will be fetched in the background.
@@ -134,18 +138,16 @@ extension Cacheable where Self: Requestable, Self.P == NoParameters {
 extension Cacheable where Self: Requestable {
     /// Returns any cached data found in storage regardless of it's expiration.
     private static func cachedData(for id: String, with networkManager: NetworkManagerProvider) -> Result<Self, Error> {
-        Self.cachedData(type: Self.self, for: id, with: networkManager)
+        Self.cachedData(type: Self.self, for: id, decoder: Self.decoder, with: networkManager)
     }
 }
 
 extension Cacheable {
     /// Returns any cached data found in storage regardless of it's expiration.
-    internal static func cachedData<T: Requestable>(type: T.Type, for id: String, with networkManager: NetworkManagerProvider) -> Result<T, Error> {
-        if let cachedData: T = try? networkManager.get(object: id) {
-            return .success(cachedData)
-        } else if
-            let cachedData: [String: Any] = try? networkManager.get(object: id),
-            let decodedData = DictionaryDecoder().decode(T.self, from: cachedData)
+    internal static func cachedData<T: Requestable>(type: T.Type, for id: String, decoder: ResponseDecoder, with networkManager: NetworkManagerProvider) -> Result<T, Error> {
+        if
+            let data = try? networkManager.get(object: id),
+            let decodedData: T = try? decoder.decode(T.self, from: data)
         {
             return .success(decodedData)
         } else {

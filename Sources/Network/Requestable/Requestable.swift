@@ -3,7 +3,7 @@ import Cache
 import CryptoKit
 import Debug
 
-public protocol Requestable: Codable {
+public protocol Requestable: Decodable {
     associatedtype P: NetworkParameters
     
     static var decoder: ResponseDecoder { get }
@@ -65,7 +65,7 @@ extension Requestable {
             if isExpired {
                 networkManager.enqueue(requestTask)
             }
-            else if case .success(let data) = cacheable.cachedData(type: Self.self, for: requestTask.id, with: networkManager) {
+            else if case .success(let data) = cacheable.cachedData(type: Self.self, for: requestTask.id, decoder: decoder, with: networkManager) {
                 dataCallback(data)
             }
             else {
