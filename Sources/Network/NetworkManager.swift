@@ -134,28 +134,12 @@ public class NetworkManager: NetworkManagerProvider {
             operation.completionBlock = { [weak operation] in
                 self.observerQueue.async {
                     self.operations.remove(operation)
-                    self.log()
                 }
             }
             
             self.operations.add(operation)
             self.operationQueue.addOperation(operation)
-            
-            self.log()
         }
-    }
-    
-    private func log() {
-        var log = "[\n"
-        
-        operations.allObjects
-            .sorted(by: { one, two in one.isExecuting })
-            .forEach { op in
-            log += op.description + "\n"
-        }
-        
-        log += "]"
-        Debug.log(log)
     }
     
     public func request<T: Requestable>(_ response: T.Type, delegate: RequestDelegateConfig?, dataCallback: @escaping (T) -> Void) where T.P == NoParameters {

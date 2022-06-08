@@ -89,7 +89,7 @@ public class URLSessionNetworkTask<R: Requestable>: QueueableTask {
         }
         
         do {
-            if #available(iOS 15.0, *) {
+            if #available(iOS 15.0, macOS 12.0, *) {
                 let (data, response) = try await urlSession.data(for: urlRequest)
                 
                 if let error = R.handle(response: response, data: data) {
