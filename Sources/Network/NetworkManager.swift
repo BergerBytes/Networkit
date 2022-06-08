@@ -30,8 +30,7 @@ public class NetworkManager: NetworkManagerProvider {
     static let diskConfig = DiskConfig(
         name: "com.network.cache",
         expiry: .seconds(0),
-        maxSize: 100_000_000, // 100mb
-        protectionType: .complete
+        maxSize: 100_000_000 // 100mb
     )
     
     static let memoryConfig = MemoryConfig()
