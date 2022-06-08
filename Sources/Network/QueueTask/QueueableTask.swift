@@ -4,7 +4,7 @@ open class QueueableTask: Identifiable, Hashable {
     public let id: String
     public let type: TaskType
 
-    @objc dynamic open var priority: Operation.QueuePriority = .normal
+    open var priority: Operation.QueuePriority = .normal
     
     public init(id: String, type: TaskType) {
         self.id = id

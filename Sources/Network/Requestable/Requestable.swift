@@ -3,7 +3,7 @@ import Cache
 import CryptoKit
 import Debug
 
-public protocol Requestable: Codable {
+public protocol Requestable: Decodable {
     associatedtype P: NetworkParameters
     
     static var decoder: ResponseDecoder { get }

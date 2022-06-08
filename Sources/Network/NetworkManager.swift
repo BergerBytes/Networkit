@@ -1,21 +1,20 @@
 import Foundation
 import Cache
 import Debug
-import AnyCodable
 
 struct ObserverEntry {
     let cancelTokenId: UUID
-    let callback: (AnyCodable) -> Void
+    let callback: (Data) -> Void
     weak var object: AnyObject?
 }
 
 public protocol NetworkManagerProvider {
-    func addObserver(for key: String, on object: AnyObject, dataCallback: @escaping (AnyCodable) -> Void) -> CancellationToken
+    func addObserver(for key: String, on object: AnyObject, dataCallback: @escaping (Data) -> Void) -> CancellationToken
     func enqueue(_ task: QueueableTask)
     func request<T: Requestable>(_ response: T.Type, delegate: RequestDelegateConfig?, dataCallback: @escaping (T) -> Void) where T.P == NoParameters
     
-    func get<T>(object key: String) throws -> T?
-    func save<T: Encodable>(object: T, key: String, cachePolicy: CachePolicy) throws
+    func get(object key: String) throws -> Data?
+    func save(object: Data, key: String, cachePolicy: CachePolicy) throws
     
     func isObjectExpired(for key: String) throws -> Bool
     func expiryDate(for key: String) throws -> Date
@@ -31,12 +30,13 @@ public class NetworkManager: NetworkManagerProvider {
     static let diskConfig = DiskConfig(
         name: "com.network.cache",
         expiry: .seconds(0),
-        maxSize: 100_000_000 // 100mb
+        maxSize: 100_000_000, // 100mb
+        protectionType: .complete
     )
     
     static let memoryConfig = MemoryConfig()
     
-    public private(set) lazy var storage = try! Storage<String, AnyCodable>(diskConfig: Self.diskConfig, memoryConfig: Self.memoryConfig, transformer: TransformerFactory.forCodable(ofType: AnyCodable.self))
+    public private(set) lazy var storage = try! Storage<String, Data>(diskConfig: Self.diskConfig, memoryConfig: Self.memoryConfig, transformer: TransformerFactory.forCodable(ofType: Data.self))
     private(set) var observers = [String: [ObserverEntry]]()
     private let observerQueue = DispatchQueue(label: "com.network.observerQueue")
     
@@ -96,7 +96,7 @@ public class NetworkManager: NetworkManagerProvider {
         }
     }
     
-    public func addObserver(for key: String, on object: AnyObject, dataCallback: @escaping (AnyCodable) -> Void) -> CancellationToken {
+    public func addObserver(for key: String, on object: AnyObject, dataCallback: @escaping (Data) -> Void) -> CancellationToken {
         // Create a cancelTokenId to match up observer entry when canceling.
         let cancelTokenId = UUID.init()
         
@@ -104,7 +104,7 @@ public class NetworkManager: NetworkManagerProvider {
             self.observers[key, default: []].append(.init(cancelTokenId: cancelTokenId, callback: dataCallback, object: object))
         }
         
-        return CancellationToken { [weak self, cancelTokenId] in
+        return CancellationToken(key: key) { [weak self, cancelTokenId] in
             self?.observerQueue.async {
                 self?.observers[key, default: []].removeAll(where: { $0.cancelTokenId == cancelTokenId })
                 if self?.observers[key]?.isEmpty == true {
@@ -163,12 +163,12 @@ public class NetworkManager: NetworkManagerProvider {
         enqueue(T.requestTask(delegate: delegate, dataCallback: dataCallback))
     }
     
-    public func get<T>(object key: String) throws -> T? {
-        try storage.object(forKey: key).value as? T
+    public func get(object key: String) throws -> Data? {
+        try storage.object(forKey: key)
     }
     
-    public func save<T: Encodable>(object: T, key: String, cachePolicy: CachePolicy) throws {
-        try storage.setObject(.init(object), forKey: key, expiry: cachePolicy.asExpiry())
+    public func save(object: Data, key: String, cachePolicy: CachePolicy) throws {
+        try storage.setObject(object, forKey: key, expiry: cachePolicy.asExpiry())
     }
     
     public func isObjectExpired(for key: String) throws -> Bool {

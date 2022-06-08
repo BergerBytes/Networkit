@@ -98,7 +98,7 @@ public class URLSessionNetworkTask<R: Requestable>: QueueableTask {
                 }
                 
                 let decodedData = try R.decoder.decode(R.self, from: data)
-                complete(response: decodedData)
+                complete(response: decodedData, data: data)
             } else {
                 let task = urlSession.dataTask(with: urlRequest) { data, response, error in
                     do {
@@ -124,7 +124,7 @@ public class URLSessionNetworkTask<R: Requestable>: QueueableTask {
                         }
                         
                         let decodedData = try R.decoder.decode(R.self, from: data)
-                        self.complete(response: decodedData)
+                        self.complete(response: decodedData, data: data)
                     }
                     catch {
                         Debug.log(error: error)
@@ -143,17 +143,19 @@ public class URLSessionNetworkTask<R: Requestable>: QueueableTask {
         }
     }
     
-    open func complete(response: R) {
-        delegate.invokeDelegates { $0.requestCompleted(id: requestIdentifier) }
-        dataCallbacks.forEach { $0(response) }
-
+    open func complete(response: R, data: Data) {
         if let cachePolicy = cachePolicy {
             do {
-                try networkManager.save(object: response, key: id, cachePolicy: cachePolicy)
+                try networkManager.save(object: data, key: id, cachePolicy: cachePolicy)
             }
             catch {
                 Debug.log(error: error)
             }
+        }
+        
+        DispatchQueue.main.sync {
+            self.delegate.invokeDelegates { $0.requestCompleted(id: self.requestIdentifier) }
+            self.dataCallbacks.forEach { $0(response) }
         }
     }
     
