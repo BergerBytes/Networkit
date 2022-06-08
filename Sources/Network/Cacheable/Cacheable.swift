@@ -33,7 +33,7 @@ extension Cacheable where Self: Requestable {
         if isExpired {
             networkManager.enqueue(requestTask)
         }
-        else if case .success(let data) = cachedData(type: Self.self, for: requestTask.id, with: networkManager) {
+        else if case .success(let data) = cachedData(type: Self.self, for: requestTask.id, decoder: Self.decoder, with: networkManager) {
             dataCallback?(data)
         }
         else {
