@@ -1,6 +1,6 @@
 import Foundation
 
-open class QueueableTask: Identifiable {
+open class QueueableTask: Identifiable, Hashable {
     public let id: String
     public let type: TaskType
 
@@ -14,6 +14,14 @@ open class QueueableTask: Identifiable {
     open func preProcess() async { }
     
     open func process() async { }
+    
+    public func hash(into hasher: inout Hasher) {
+        hasher.combine(id)
+    }
+    
+    public static func == (lhs: QueueableTask, rhs: QueueableTask) -> Bool {
+        lhs.id == rhs.id
+    }
 }
 
 extension QueueableTask {

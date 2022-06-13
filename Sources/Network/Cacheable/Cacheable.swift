@@ -23,7 +23,22 @@ public typealias CacheableResponse = Requestable & Cacheable
 
 extension Cacheable where Self: Requestable {
     public static func fetch(given parameters: P, delegate: RequestDelegateConfig? = nil, with networkManager: NetworkManagerProvider = NetworkManager.shared) {
-        fetch(given: parameters, delegate: delegate, with: networkManager, dataCallback: { _ in })
+        fetch(given: parameters, delegate: delegate, with: networkManager, dataCallback: nil)
+    }
+    
+    public static func fetch(given parameters: P, delegate: RequestDelegateConfig?, with networkManager: NetworkManagerProvider = NetworkManager.shared, dataCallback: ((Self) -> Void)?) {
+        let requestTask = Self.requestTask(given: parameters, delegate: delegate, dataCallback: dataCallback)
+        
+        let isExpired = (try? networkManager.isObjectExpired(for: requestTask.id)) ?? true
+        if isExpired {
+            networkManager.enqueue(requestTask)
+        }
+        else if case .success(let data) = cachedData(type: Self.self, for: requestTask.id, decoder: Self.decoder, with: networkManager) {
+            dataCallback?(data)
+        }
+        else {
+            networkManager.enqueue(requestTask)
+        }
     }
     
     @discardableResult
@@ -113,10 +128,10 @@ extension Cacheable where Self: Requestable, Self.P == NoParameters {
     }
     
     public static func fetch(delegate: RequestDelegateConfig?, with networkManager: NetworkManagerProvider = NetworkManager.shared, force: Bool = false) {
-        fetch(delegate: delegate, with: networkManager, force: force, dataCallback: { _ in })
+        fetch(delegate: delegate, with: networkManager, force: force, dataCallback: nil)
     }
     
-    public static func fetch(delegate: RequestDelegateConfig?, with networkManager: NetworkManagerProvider = NetworkManager.shared, force: Bool = false, dataCallback: @escaping (Self) -> Void) {
+    public static func fetch(delegate: RequestDelegateConfig?, with networkManager: NetworkManagerProvider = NetworkManager.shared, force: Bool = false, dataCallback: ((Self) -> Void)?) {
         let requestTask = Self.requestTask(given: .none, delegate: delegate, dataCallback: dataCallback)
         
         let isExpired = (try? networkManager.isObjectExpired(for: requestTask.id)) ?? true

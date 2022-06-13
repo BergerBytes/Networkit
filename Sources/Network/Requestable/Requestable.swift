@@ -58,22 +58,7 @@ extension Requestable {
     public static func headers(given parameters: P) -> [String: String]? { nil }
     
     public static func fetch(given parameters: P, delegate: RequestDelegateConfig?, with networkManager: NetworkManagerProvider = NetworkManager.shared, dataCallback: @escaping (Self) -> Void) {
-        let requestTask = Self.requestTask(given: parameters, delegate: delegate, dataCallback: dataCallback)
-        
-        if let cacheable = Self.self as? Cacheable.Type {
-            let isExpired = (try? networkManager.isObjectExpired(for: requestTask.id)) ?? true
-            if isExpired {
-                networkManager.enqueue(requestTask)
-            }
-            else if case .success(let data) = cacheable.cachedData(type: Self.self, for: requestTask.id, decoder: decoder, with: networkManager) {
-                dataCallback(data)
-            }
-            else {
-                networkManager.enqueue(requestTask)
-            }
-        } else {
-            networkManager.enqueue(requestTask)
-        }
+        networkManager.enqueue(Self.requestTask(given: parameters, delegate: delegate, dataCallback: dataCallback))
     }
     
     /// Create a URLSessionNetworkTask for a request response.
