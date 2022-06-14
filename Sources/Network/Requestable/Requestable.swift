@@ -25,6 +25,13 @@ public protocol Requestable: Decodable {
     /// Setting this property assumes the subcomponent or component string is not percent encoded and will add percent encoding (if the component allows percent encoding).
     static var host: String { get }
     
+    /// The port subcomponent.
+    ///
+    /// The getter for this property removes any percent encoding this component may have (if the component allows percent encoding).
+    /// Setting this property assumes the subcomponent or component string is not percent encoded and will add percent encoding (if the component allows percent encoding).
+    /// Attempting to set a negative port number will cause a fatal error.
+    static var port: Int? { get }
+    
     /// The path subcomponent.
     ///
     /// The getter for this property removes any percent encoding this component may have (if the component allows percent encoding).
@@ -38,12 +45,14 @@ public protocol Requestable: Decodable {
 
 public extension Requestable {
     static var scheme: String { "https" }
+    static var port: Int? { nil }
     static var decoder: ResponseDecoder { JSONDecoder() }
 
     static func url(given parameters: P) -> URL {
         var components = URLComponents()
         components.scheme = scheme
         components.host = host
+        components.port = port
         components.path = path(given: parameters)?.pathString ?? ""
                 
         guard let url = components.url else {
