@@ -112,6 +112,10 @@ extension Requestable where P == NoParameters {
     public static func requestTask(delegate: RequestDelegateConfig?, dataCallback: @escaping (_ data: Self) -> Void) -> QueueableTask {
         requestTask(given: .none, delegate: delegate, dataCallback: dataCallback)
     }
+    
+    public static func fetch(delegate: RequestDelegateConfig?, with networkManager: NetworkManagerProvider = NetworkManager.shared, dataCallback: @escaping (Self) -> Void) {
+        fetch(given: .none, delegate: delegate, with: networkManager, dataCallback:  dataCallback)
+    }
 }
 
 public enum RequestMethod: String {
