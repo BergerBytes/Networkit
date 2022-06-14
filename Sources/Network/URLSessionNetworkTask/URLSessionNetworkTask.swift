@@ -20,7 +20,7 @@ public class URLSessionNetworkTask<R: Requestable>: QueueableTask {
     public let requestIdentifier: RequestIdentifier?
     private let networkManager: NetworkManagerProvider
     
-    required init(
+    public required init(
         urlSession: URLSession = .shared,
         method: RequestMethod,
         url: URL,
