@@ -41,6 +41,11 @@ public protocol Requestable: Decodable {
     static func headers(given parameters: P) -> [String: String]?
     static func handle(response: URLResponse, data: Data?) -> Error?
     static func generateId(given parameters: P) -> String
+    
+    /// Create a URLSessionNetworkTask for a request response.
+    /// - Parameter parameters: The parameters for the network response.
+    /// - Returns: A URL session task. (QueueableTask)
+    static func requestTask(given parameters: P, delegate: RequestDelegateConfig?, dataCallback: ((Self) -> Void)?) -> QueueableTask
 }
 
 public extension Requestable {
