@@ -19,7 +19,7 @@ public class URLSessionNetworkTask<R: Requestable>: QueueableTask {
     public let delegate = MulticastDelegate<RequestDelegate>()
     public let requestIdentifier: RequestIdentifier?
     private let networkManager: NetworkManagerProvider
-    var result: Result<R, Error>?
+    public var result: Result<R, Error>?
     
     public required init(
         urlSession: URLSession = .shared,
