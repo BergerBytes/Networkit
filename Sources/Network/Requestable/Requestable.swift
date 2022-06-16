@@ -45,7 +45,9 @@ public protocol Requestable: Decodable {
     /// Create a URLSessionNetworkTask for a request response.
     /// - Parameter parameters: The parameters for the network response.
     /// - Returns: A URL session task. (QueueableTask)
-    static func requestTask(given parameters: P, delegate: RequestDelegateConfig?, dataCallback: ((Self) -> Void)?) -> QueueableTask
+    static func requestTask(given parameters: P, delegate: RequestDelegateConfig?, dataCallback: ((Self) -> Void)?) -> NetworkTask<Self>
+    
+    static func requestTask(given parameters: P, callback: @escaping (Result<Self, Error>) -> Void) -> NetworkTask<Self>
 }
 
 public extension Requestable {
@@ -75,10 +77,26 @@ extension Requestable {
         networkManager.enqueue(Self.requestTask(given: parameters, delegate: delegate, dataCallback: dataCallback))
     }
     
+    public static func fetch(given parameters: P, with networkManager: NetworkManagerProvider = NetworkManager.shared) async throws -> Self {
+        try await withCheckedThrowingContinuation { continuation in
+            networkManager.enqueue(
+                Self.requestTask(given: parameters) { [continuation] result in
+                    switch result {
+                    case let .success(response):
+                        continuation.resume(returning: response)
+                        
+                    case let .failure(error):
+                        continuation.resume(throwing: error)
+                    }
+                }
+            )
+        }
+    }
+    
     /// Create a URLSessionNetworkTask for a request response.
     /// - Parameter parameters: The parameters for the network response.
     /// - Returns: A URL session task. (QueueableTask)
-    public static func requestTask(given parameters: P, delegate: RequestDelegateConfig?, dataCallback: ((Self) -> Void)?) -> QueueableTask {
+    public static func requestTask(given parameters: P, delegate: RequestDelegateConfig?, dataCallback: ((Self) -> Void)?) -> NetworkTask<Self> {
         URLSessionNetworkTask(
             method: method,
             url: url(given: parameters),
@@ -87,6 +105,19 @@ extension Requestable {
             cachePolicy: (Self.self as? Cacheable.Type)?.cachePolicy,
             dataCallback: dataCallback,
             delegate: delegate
+        )
+    }
+    
+    public static func requestTask(given parameters: P, callback: @escaping (Result<Self, Error>) -> Void) -> NetworkTask<Self> {
+        URLSessionNetworkTask(
+            method: method,
+            url: url(given: parameters),
+            parameters: parameters,
+            headers: headers(given: parameters),
+            cachePolicy: (Self.self as? Cacheable.Type)?.cachePolicy,
+            dataCallback: nil,
+            delegate: nil,
+            resultCallback: callback
         )
     }
     
@@ -123,13 +154,14 @@ extension Requestable {
 extension Requestable where P == NoParameters {
     /// Create a URLSessionNetworkTask for a request response without any parameter requirements.
     /// - Returns: The URL session task. (QueueableTask)
-    public static func requestTask(delegate: RequestDelegateConfig?, dataCallback: @escaping (_ data: Self) -> Void) -> QueueableTask {
+    public static func requestTask(delegate: RequestDelegateConfig?, dataCallback: @escaping (_ data: Self) -> Void) -> NetworkTask<Self> {
         requestTask(given: .none, delegate: delegate, dataCallback: dataCallback)
     }
     
     public static func fetch(delegate: RequestDelegateConfig?, with networkManager: NetworkManagerProvider = NetworkManager.shared, dataCallback: @escaping (Self) -> Void) {
         fetch(given: .none, delegate: delegate, with: networkManager, dataCallback:  dataCallback)
     }
+    
 }
 
 public enum RequestMethod: String {

@@ -1,5 +1,9 @@
 import Foundation
 
+open class NetworkTask<R: Requestable>: QueueableTask {
+    let responseType = R.Type.self
+}
+
 open class QueueableTask: Identifiable, Hashable {
     public let id: String
     public let type: TaskType

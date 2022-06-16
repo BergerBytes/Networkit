@@ -2,7 +2,7 @@ import CryptoKit
 import Debug
 import Foundation
 
-public class URLSessionNetworkTask<R: Requestable>: QueueableTask {
+public class URLSessionNetworkTask<R: Requestable>: NetworkTask<R> {
     enum Errors: Error {
         case invalidURL
         case noResponse
@@ -19,7 +19,7 @@ public class URLSessionNetworkTask<R: Requestable>: QueueableTask {
     public let delegate = MulticastDelegate<RequestDelegate>()
     public let requestIdentifier: RequestIdentifier?
     private let networkManager: NetworkManagerProvider
-    public var result: Result<R, Error>?
+    public var resultCallbacks = [(Result<R, Error>) -> Void]()
     
     public required init(
         urlSession: URLSession = .shared,
@@ -30,6 +30,7 @@ public class URLSessionNetworkTask<R: Requestable>: QueueableTask {
         cachePolicy: CachePolicy?,
         dataCallback: ((R) -> Void)?,
         delegate: RequestDelegateConfig?,
+        resultCallback: ((Result<R, Error>) -> Void)? = nil,
         networkManager: NetworkManagerProvider = NetworkManager.shared
     ) {
         self.urlSession = urlSession
@@ -44,6 +45,10 @@ public class URLSessionNetworkTask<R: Requestable>: QueueableTask {
         }
         self.delegate += delegate?.delegate
         self.requestIdentifier = delegate?.id
+        
+        if let resultCallback {
+            self.resultCallbacks.append(resultCallback)
+    }
         self.networkManager = networkManager
                 
         super.init(id: R.generateId(given: parameters), type: .standard)
@@ -121,6 +126,7 @@ public class URLSessionNetworkTask<R: Requestable>: QueueableTask {
                         }
                         
                         guard let data = data else {
+                            self.failed(error: Errors.noResponse)
                             return
                         }
                         
@@ -154,17 +160,18 @@ public class URLSessionNetworkTask<R: Requestable>: QueueableTask {
             }
         }
         
+        resultCallbacks.forEach { $0(.success(response)) }
         DispatchQueue.main.sync {
             self.delegate.invokeDelegates { $0.requestCompleted(id: self.requestIdentifier) }
             self.dataCallbacks.forEach { $0(response) }
         }
-        
-        result = .success(response)
     }
     
     open func failed(error: Error) {
-        delegate.invokeDelegates { $0.requestFailed(id: requestIdentifier, error: error) }
-        result = .failure(error)
+        resultCallbacks.forEach { $0(.failure(error)) }
+        DispatchQueue.main.sync {
+            self.delegate.invokeDelegates { $0.requestFailed(id: self.requestIdentifier, error: error) }
+        }
     }
 }
 

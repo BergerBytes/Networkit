@@ -9,8 +9,8 @@ public protocol RequestDelegate: AnyObject {
 }
 
 public struct RequestDelegateConfig {
-    weak var delegate: RequestDelegate?
-    let id: RequestIdentifier?
+    public weak var delegate: RequestDelegate?
+    public let id: RequestIdentifier?
     
     public init(_ delegate: RequestDelegate?, id: RequestIdentifier?) {
         self.delegate = delegate
