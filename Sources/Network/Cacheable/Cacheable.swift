@@ -22,8 +22,8 @@ public extension Cacheable {
 public typealias CacheableResponse = Requestable & Cacheable
 
 extension Cacheable where Self: Requestable {
-    public static func fetch(given parameters: P, delegate: RequestDelegateConfig? = nil, with networkManager: NetworkManagerProvider = NetworkManager.shared) {
-        fetch(given: parameters, delegate: delegate, with: networkManager, dataCallback: { _ in })
+    public static func fetch(given parameters: P, delegate: RequestDelegateConfig? = nil, with networkManager: NetworkManagerProvider = NetworkManager.shared, force: Bool = false) {
+        fetch(given: parameters, delegate: delegate, with: networkManager, force: force, dataCallback: { _ in })
     }
     
     @discardableResult

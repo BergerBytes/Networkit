@@ -57,12 +57,12 @@ public extension Requestable {
 extension Requestable {
     public static func headers(given parameters: P) -> [String: String]? { nil }
     
-    public static func fetch(given parameters: P, delegate: RequestDelegateConfig?, with networkManager: NetworkManagerProvider = NetworkManager.shared, dataCallback: @escaping (Self) -> Void) {
+    public static func fetch(given parameters: P, delegate: RequestDelegateConfig?, with networkManager: NetworkManagerProvider = NetworkManager.shared, force: Bool = false, dataCallback: @escaping (Self) -> Void) {
         let requestTask = Self.requestTask(given: parameters, delegate: delegate, dataCallback: dataCallback)
         
         if let cacheable = Self.self as? Cacheable.Type {
             let isExpired = (try? networkManager.isObjectExpired(for: requestTask.id)) ?? true
-            if isExpired {
+            if isExpired || force {
                 networkManager.enqueue(requestTask)
             }
             else if case .success(let data) = cacheable.cachedData(type: Self.self, for: requestTask.id, decoder: decoder, with: networkManager) {
