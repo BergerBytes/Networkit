@@ -46,9 +46,9 @@ public class URLSessionNetworkTask<R: Requestable>: QueueableTask {
         self.delegate += delegate?.delegate
         self.requestIdentifier = delegate?.id
         
-        if let resultCallback {
+        if let resultCallback = resultCallback {
             self.resultCallbacks.append(resultCallback)
-    }
+        }
         self.networkManager = networkManager
                 
         super.init(id: R.generateId(given: parameters), type: .standard)
@@ -187,6 +187,7 @@ extension URLSessionNetworkTask: MergableRequest {
         existingTask.delegate += delegate
         if let existingTask = existingTask as? URLSessionNetworkTask<R> {
             existingTask.resultCallbacks += resultCallbacks
+            existingTask.dataCallbacks += dataCallbacks
         }
     }
 }
