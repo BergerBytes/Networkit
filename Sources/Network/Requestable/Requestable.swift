@@ -42,12 +42,7 @@ public protocol Requestable: Decodable {
     static func handle(response: URLResponse, data: Data?) -> Error?
     static func generateId(given parameters: P) -> String
     
-    /// Create a URLSessionNetworkTask for a request response.
-    /// - Parameter parameters: The parameters for the network response.
-    /// - Returns: A URL session task. (QueueableTask)
-    static func requestTask(given parameters: P, delegate: RequestDelegateConfig?, dataCallback: ((Self) -> Void)?) -> QueueableTask
-    
-    static func requestTask(given parameters: P, callback: @escaping (Result<Self, Error>) -> Void) -> QueueableTask
+    static func requestTask(given parameters: P, delegate: RequestDelegateConfig?, dataCallback: ((Self) -> Void)?, resultCallback: ((Result<Self, Error>) -> Void)?) -> QueueableTask
 }
 
 public extension Requestable {
@@ -97,6 +92,14 @@ extension Requestable {
     /// - Parameter parameters: The parameters for the network response.
     /// - Returns: A URL session task. (QueueableTask)
     public static func requestTask(given parameters: P, delegate: RequestDelegateConfig?, dataCallback: ((Self) -> Void)?) -> QueueableTask {
+        requestTask(given: parameters, delegate: delegate, dataCallback: dataCallback, resultCallback: nil)
+    }
+    
+    public static func requestTask(given parameters: P, callback: @escaping (Result<Self, Error>) -> Void) -> QueueableTask {
+        requestTask(given: parameters, delegate: nil, dataCallback: nil, resultCallback: callback)
+    }
+    
+    public static func requestTask(given parameters: P, delegate: RequestDelegateConfig?, dataCallback: ((Self) -> Void)?, resultCallback: ((Result<Self, Error>) -> Void)?) -> QueueableTask {
         URLSessionNetworkTask(
             method: method,
             url: url(given: parameters),
@@ -104,20 +107,8 @@ extension Requestable {
             headers: headers(given: parameters),
             cachePolicy: (Self.self as? Cacheable.Type)?.cachePolicy,
             dataCallback: dataCallback,
-            delegate: delegate
-        )
-    }
-    
-    public static func requestTask(given parameters: P, callback: @escaping (Result<Self, Error>) -> Void) -> QueueableTask {
-        URLSessionNetworkTask(
-            method: method,
-            url: url(given: parameters),
-            parameters: parameters,
-            headers: headers(given: parameters),
-            cachePolicy: (Self.self as? Cacheable.Type)?.cachePolicy,
-            dataCallback: nil,
-            delegate: nil,
-            resultCallback: callback
+            delegate: delegate,
+            resultCallback: resultCallback
         )
     }
     
