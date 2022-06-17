@@ -182,6 +182,13 @@ extension URLSessionNetworkTask: MergableRequest {
         guard let task = task as? Self else { return false }
         return id == task.id
     }
+    
+    public func merge(into existingTask: MergableRequest) throws {
+        existingTask.delegate += delegate
+        if let existingTask = existingTask as? URLSessionNetworkTask<R> {
+            existingTask.resultCallbacks += resultCallbacks
+        }
+    }
 }
 
 // MARK: - CustomDebugStringConvertible

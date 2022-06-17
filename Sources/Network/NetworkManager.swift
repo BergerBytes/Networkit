@@ -124,11 +124,14 @@ public class NetworkManager: NetworkManagerProvider {
                     .compactMap({ $0.task as? MergableRequest})
                     .first(where: { newTask.shouldBeMerged(with: $0) })
             {
-                existingTask.delegate += newTask.delegate
-                
-                let operation = self.operations.allObjects.first(where: { $0.id == existingTask.id })
-                operation?.queuePriority = operation?.queuePriority.increment() ?? .normal
-                return
+                do {
+                    try newTask.merge(into: existingTask)
+                    let operation = self.operations.allObjects.first(where: { $0.id == existingTask.id })
+                    operation?.queuePriority = operation?.queuePriority.increment() ?? .normal
+                    return
+                } catch {
+                    Debug.log(error: error)
+                }
             }
             
             let operation = task.newOperation()
