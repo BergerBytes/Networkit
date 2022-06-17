@@ -2,7 +2,7 @@ import CryptoKit
 import Debug
 import Foundation
 
-public class URLSessionNetworkTask<R: Requestable>: NetworkTask<R> {
+public class URLSessionNetworkTask<R: Requestable>: QueueableTask {
     enum Errors: Error {
         case invalidURL
         case noResponse

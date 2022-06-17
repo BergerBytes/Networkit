@@ -10,7 +10,7 @@ struct ObserverEntry {
 
 public protocol NetworkManagerProvider {
     func addObserver(for key: String, on object: AnyObject, dataCallback: @escaping (Data) -> Void) -> CancellationToken
-    func enqueue(_ task: NetworkTask<some Requestable>)
+    func enqueue(_ task: QueueableTask)
     func request<T: Requestable>(_ response: T.Type, delegate: RequestDelegateConfig?, dataCallback: @escaping (T) -> Void) where T.P == NoParameters
     
     func get(object key: String) throws -> Data?
@@ -115,7 +115,7 @@ public class NetworkManager: NetworkManagerProvider {
         }
     }
     
-    public func enqueue(_ task: NetworkTask<some Requestable>) {
+    public func enqueue(_ task: QueueableTask) {
         observerQueue.async {
             if
                 let newTask = task as? MergableRequest,
