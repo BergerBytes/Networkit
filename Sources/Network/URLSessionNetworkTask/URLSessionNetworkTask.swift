@@ -151,25 +151,26 @@ public class URLSessionNetworkTask<R: Requestable>: QueueableTask {
     }
     
     open func complete(response: R, data: Data) {
-        if let cachePolicy = cachePolicy {
-            do {
-                try networkManager.save(object: data, key: id, cachePolicy: cachePolicy)
-            }
-            catch {
-                Debug.log(error: error)
-            }
-        }
-        
-        resultCallbacks.forEach { $0(.success(response)) }
         DispatchQueue.main.sync {
+            if let cachePolicy = cachePolicy {
+                do {
+                    try networkManager.save(object: data, key: id, cachePolicy: cachePolicy)
+                }
+                catch {
+                    Debug.log(error: error)
+                }
+            }
+            
+            resultCallbacks.forEach { $0(.success(response)) }
+            
             self.delegate.invokeDelegates { $0.requestCompleted(id: self.requestIdentifier) }
             self.dataCallbacks.forEach { $0(response) }
         }
     }
     
     open func failed(error: Error) {
-        resultCallbacks.forEach { $0(.failure(error)) }
         DispatchQueue.main.sync {
+            resultCallbacks.forEach { $0(.failure(error)) }
             self.delegate.invokeDelegates { $0.requestFailed(id: self.requestIdentifier, error: error) }
         }
     }
