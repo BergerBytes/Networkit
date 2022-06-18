@@ -12,8 +12,4 @@ public class CancellationToken {
     public func cancel() {
         cancellationClosure()
     }
-    
-    deinit {
-        cancel()
-    }
 }
