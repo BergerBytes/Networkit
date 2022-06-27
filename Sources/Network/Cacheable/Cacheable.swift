@@ -22,14 +22,14 @@ public extension Cacheable {
 public typealias CacheableResponse = Requestable & Cacheable
 
 extension Cacheable where Self: Requestable {
-    public static func fetch(given parameters: P, delegate: RequestDelegateConfig? = nil, with networkManager: NetworkManagerProvider = NetworkManager.shared) {
-        fetch(given: parameters, delegate: delegate, with: networkManager, dataCallback: nil)
+    public static func fetch(given parameters: P, delegate: RequestDelegateConfig? = nil, force: Bool = false, with networkManager: NetworkManagerProvider = NetworkManager.shared) {
+        fetch(given: parameters, delegate: delegate, force: force, with: networkManager, dataCallback: nil)
     }
     
-    public static func fetch(given parameters: P, delegate: RequestDelegateConfig?, with networkManager: NetworkManagerProvider = NetworkManager.shared, dataCallback: ((Self) -> Void)?) {
+    public static func fetch(given parameters: P, delegate: RequestDelegateConfig?, force: Bool = false, with networkManager: NetworkManagerProvider = NetworkManager.shared, dataCallback: ((Self) -> Void)?) {
         let requestTask = Self.requestTask(given: parameters, delegate: delegate, dataCallback: dataCallback)
         
-        let isExpired = (try? networkManager.isObjectExpired(for: requestTask.id)) ?? true
+        let isExpired = force ? true : (try? networkManager.isObjectExpired(for: requestTask.id)) ?? true
         if isExpired {
             networkManager.enqueue(requestTask)
         }
@@ -77,6 +77,7 @@ extension Cacheable where Self: Requestable {
         
         // If the new cache policy would expire before the existing cached expiry date, set isExpired to true.
         if
+            isExpired == false,
             let cacheExpiryDate = try? networkManager.expiryDate(for: request.id),
             let newExpiryDate = Self.cachePolicy.asExpiry()?.date,
             cacheExpiryDate.distance(to: newExpiryDate) < 0
