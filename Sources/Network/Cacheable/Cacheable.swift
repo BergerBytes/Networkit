@@ -22,14 +22,14 @@ public extension Cacheable {
 public typealias CacheableResponse = Requestable & Cacheable
 
 extension Cacheable where Self: Requestable {
-    public static func fetch(given parameters: P, delegate: RequestDelegateConfig? = nil, with networkManager: NetworkManagerProvider = NetworkManager.shared) {
-        fetch(given: parameters, delegate: delegate, with: networkManager, dataCallback: nil)
+    public static func fetch(given parameters: P, delegate: RequestDelegateConfig? = nil, force: Bool = false, with networkManager: NetworkManagerProvider = NetworkManager.shared) {
+        fetch(given: parameters, delegate: delegate, force: force, with: networkManager, dataCallback: nil)
     }
     
-    public static func fetch(given parameters: P, delegate: RequestDelegateConfig?, with networkManager: NetworkManagerProvider = NetworkManager.shared, dataCallback: ((Self) -> Void)?) {
+    public static func fetch(given parameters: P, delegate: RequestDelegateConfig?, force: Bool = false, with networkManager: NetworkManagerProvider = NetworkManager.shared, dataCallback: ((Self) -> Void)?) {
         let requestTask = Self.requestTask(given: parameters, delegate: delegate, dataCallback: dataCallback)
         
-        let isExpired = (try? networkManager.isObjectExpired(for: requestTask.id)) ?? true
+        let isExpired = force ? true : (try? networkManager.isObjectExpired(for: requestTask.id)) ?? true
         if isExpired {
             networkManager.enqueue(requestTask)
         }
@@ -85,7 +85,7 @@ extension Cacheable where Self: Requestable {
         }
         
         // Return any cached data if not expired or expired data is allowed.
-        if !duplicateRequest && (isExpired == false || returnCachedDataIfExpired) {
+        if isExpired == false || returnCachedDataIfExpired {
             switch cachedData(for: request.id, with: networkManager) {
             case let .success(data):
                 dataCallback(data)
