@@ -55,7 +55,9 @@ public class URLSessionNetworkTask<R: Requestable>: QueueableTask {
     public override func process() async {
         await super.process()
         
-        delegate.invokeDelegates { $0.requestStarted(id: requestIdentifier) }
+        DispatchQueue.main.sync {
+            delegate.invokeDelegates { $0.requestStarted(id: requestIdentifier) }
+        }
                         
         guard
             var urlComponents = URLComponents(url: url, resolvingAgainstBaseURL: false)
