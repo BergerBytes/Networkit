@@ -86,7 +86,7 @@ extension Cacheable where Self: Requestable {
         }
         
         // Return any cached data if not expired or expired data is allowed.
-        if !duplicateRequest && (isExpired == false || returnCachedDataIfExpired) {
+        if isExpired == false || returnCachedDataIfExpired {
             switch cachedData(for: request.id, with: networkManager) {
             case let .success(data):
                 dataCallback(data)
