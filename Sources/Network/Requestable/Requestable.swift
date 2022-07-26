@@ -142,6 +142,8 @@ extension Requestable {
     }
 }
 
+// MARK: - Requestable where P == NoParameters
+
 extension Requestable where P == NoParameters {
     /// Create a URLSessionNetworkTask for a request response without any parameter requirements.
     /// - Returns: The URL session task. (QueueableTask)
@@ -155,6 +157,24 @@ extension Requestable where P == NoParameters {
     
     public static func fetch(with networkManager: NetworkManagerProvider = NetworkManager.shared) async throws -> Self {
         try await fetch(given: .none, with: networkManager)
+    }
+}
+
+// MARK: - Requestable where P == EmptyInitializable
+
+extension Requestable where P: EmptyInitializable {
+    /// Create a URLSessionNetworkTask for a request response without any parameter requirements.
+    /// - Returns: The URL session task. (QueueableTask)
+    public static func requestTask(delegate: RequestDelegateConfig?, dataCallback: @escaping (_ data: Self) -> Void) -> QueueableTask {
+        requestTask(given: .init(), delegate: delegate, dataCallback: dataCallback)
+    }
+    
+    public static func fetch(delegate: RequestDelegateConfig?, with networkManager: NetworkManagerProvider = NetworkManager.shared, dataCallback: @escaping (Self) -> Void) {
+        fetch(given: .init(), delegate: delegate, with: networkManager, dataCallback:  dataCallback)
+    }
+    
+    public static func fetch(with networkManager: NetworkManagerProvider = NetworkManager.shared) async throws -> Self {
+        try await fetch(given: .init(), with: networkManager)
     }
 }
 
