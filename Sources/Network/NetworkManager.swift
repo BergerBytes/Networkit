@@ -78,7 +78,7 @@ public class NetworkManager: NetworkManagerProvider {
                         }
                         
                     case let .failure(error):
-                        Debug.log(level: .error, "Failed to get item", params: ["Key": key, "Error" : error.localizedDescription])
+                        Log.error(in: .network, "Failed to get item", params: ["Key": key, "Error" : error.localizedDescription])
                     }
                 }
                 
@@ -130,7 +130,7 @@ public class NetworkManager: NetworkManagerProvider {
                     operation?.queuePriority = operation?.queuePriority.increment() ?? .normal
                     return
                 } catch {
-                    Debug.log(error: error)
+                    Log.error(in: .network, error)
                 }
             }
             

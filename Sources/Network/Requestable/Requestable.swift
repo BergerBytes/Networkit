@@ -118,8 +118,8 @@ extension Requestable {
             let encodedParameters = try? JSONEncoder().encode(parameters),
             let hash = try? SHA256.hash(data: JSONEncoder().encode([method.rawValue, urlString, String(decoding: encodedParameters, as: UTF8.self)]))
         else {
-            Debug.log(
-                level: .error,
+            Log.error(
+                in: .network,
                 "Failed to runtime agnostically hash a URLSessionNetworkTask id. Falling back to Hasher().",
                 params: [
                     "Response Type": "\(Self.self)",

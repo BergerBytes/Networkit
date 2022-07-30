@@ -136,7 +136,7 @@ public class URLSessionNetworkTask<R: Requestable>: QueueableTask {
                         self.complete(response: decodedData, data: data)
                     }
                     catch {
-                        Debug.log(error: error)
+                        Log.error(in: .network, error)
                         self.failed(error: error)
                     }
                 }
@@ -147,7 +147,7 @@ public class URLSessionNetworkTask<R: Requestable>: QueueableTask {
             }
         }
         catch {
-            Debug.log(error: error)
+            Log.error(in: .network, error)
             failed(error: error)
         }
     }
@@ -159,7 +159,7 @@ public class URLSessionNetworkTask<R: Requestable>: QueueableTask {
                     try networkManager.save(object: data, key: id, cachePolicy: cachePolicy)
                 }
                 catch {
-                    Debug.log(error: error)
+                    Log.error(in: .network, error)
                 }
             }
             

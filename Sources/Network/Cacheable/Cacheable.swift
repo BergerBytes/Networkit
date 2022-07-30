@@ -61,7 +61,7 @@ extension Cacheable where Self: Requestable {
                 guard
                     let value = try? Self.decoder.decode(Self.self, from: data)
                 else {
-                    Debug.log(level: .error, "Type mismatch", params: ["Expected Type" : Self.self])
+                    Log.error(in: .network, "Type mismatch", params: ["Expected Type" : Self.self])
                     return
                 }
                 
@@ -138,7 +138,7 @@ extension Cacheable where Self: Requestable, Self.P: EmptyInitializable {
         let requestTask = Self.requestTask(given: .init(), delegate: delegate, dataCallback: dataCallback)
         
         let isExpired = (try? networkManager.isObjectExpired(for: requestTask.id)) ?? true
-        Debug.log("Is Expired: \(isExpired)")
+        Log.info(in: .network, "Is Expired: \(isExpired)")
         if isExpired || force {
             networkManager.enqueue(requestTask)
         }
@@ -167,7 +167,7 @@ extension Cacheable where Self: Requestable, Self.P == NoParameters {
         let requestTask = Self.requestTask(given: .none, delegate: delegate, dataCallback: dataCallback)
         
         let isExpired = (try? networkManager.isObjectExpired(for: requestTask.id)) ?? true
-        Debug.log("Is Expired: \(isExpired)")
+        Log.info(in: .network, "Is Expired: \(isExpired)")
         if isExpired || force {
             networkManager.enqueue(requestTask)
         }
