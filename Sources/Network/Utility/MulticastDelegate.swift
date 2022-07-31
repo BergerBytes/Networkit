@@ -45,7 +45,7 @@ final public class MulticastDelegate<T> {
         
         guard
             let delegate = delegate,
-            containsDelegate(delegate) == false
+            unsafeContainsDelegate(delegate) == false
         else {
             return
         }
@@ -89,6 +89,10 @@ final public class MulticastDelegate<T> {
         lock.lock()
         
         return delegates.contains(delegate as AnyObject)
+    }
+    
+    private func unsafeContainsDelegate(_ delegate: T) -> Bool {
+        delegates.contains(delegate as AnyObject)
     }
 }
 
