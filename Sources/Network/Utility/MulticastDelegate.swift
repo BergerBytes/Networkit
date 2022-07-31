@@ -107,11 +107,7 @@ public func +=<T>(left: MulticastDelegate<T>, right: T?) {
 /// - parameter left:   The multicast delegate
 /// - parameter right:  The multicast delegate to add
 public func +=<T>(left: MulticastDelegate<T>, right: MulticastDelegate<T>) {
-    defer {
-        left.lock.unlock()
-        right.lock.unlock()
-    }
-    left.lock.lock()
+    defer { right.lock.unlock() }
     right.lock.lock()
 
     right.delegates.allObjects
@@ -126,9 +122,6 @@ public func +=<T>(left: MulticastDelegate<T>, right: MulticastDelegate<T>) {
 /// - parameter left: The multicast delegate
 /// - parameter right: The delegate to be removed
 public func -=<T>(left: MulticastDelegate<T>, right: T?) {
-    defer { left.lock.unlock() }
-    left.lock.lock()
-    
     if let right = right {
         left.removeDelegate(right)
     }
@@ -149,8 +142,5 @@ infix operator |> : MulticastPrecedence
 ///
 /// - returns: The `MulticastDelegate` after all its delegates have been invoked
 public func |><T>(left: MulticastDelegate<T>, right: (T) -> ()) {
-    defer { left.lock.unlock() }
-    left.lock.lock()
-    
     left.invokeDelegates(right)
 }
