@@ -1,16 +1,21 @@
 import Foundation
 
 /// `MulticastDelegate` lets you easily create a "multicast delegate" for a given protocol or class.
-open class MulticastDelegate<T> {
+final public class MulticastDelegate<T> {
     
     /// The delegates hash table.
     fileprivate let delegates: NSHashTable<AnyObject>
+    
+    fileprivate let lock = NSLock()
     
     /// Use the property to check if no delegates are contained there.
     ///
     /// - returns: `true` if there are no delegates at all, `false` if there is at least one.
     public var isEmpty: Bool {
-        delegates.allObjects.isEmpty
+        defer { lock.unlock() }
+        lock.lock()
+        
+        return delegates.allObjects.isEmpty
     }
 
     /// Use this method to initialize a new `MulticastDelegate` specifying whether delegate references should be weak or strong.
@@ -35,6 +40,9 @@ open class MulticastDelegate<T> {
     ///
     /// - parameter delegate: The delegate to be added.
     public func addDelegate(_ delegate: T?) {
+        defer { lock.unlock() }
+        lock.lock()
+        
         guard
             let delegate = delegate,
             containsDelegate(delegate) == false
@@ -51,6 +59,9 @@ open class MulticastDelegate<T> {
     ///
     /// - parameter delegate:  The delegate to be removed.
     public func removeDelegate(_ delegate: T) {
+        defer { lock.unlock() }
+        lock.lock()
+        
         delegates.remove(delegate as AnyObject)
     }
     
@@ -60,6 +71,9 @@ open class MulticastDelegate<T> {
     ///
     /// - parameter invocation: The closure to be invoked on each delegate.
     public func invokeDelegates(_ invocation: (T) -> ()) {
+        defer { lock.unlock() }
+        lock.lock()
+        
         for delegate in delegates.allObjects.compactMap({ $0 as? T }) {
             invocation(delegate)
         }
@@ -71,7 +85,10 @@ open class MulticastDelegate<T> {
     ///
     /// - returns: `true` if the delegate is found or `false` otherwise
     public func containsDelegate(_ delegate: T) -> Bool {
-        delegates.contains(delegate as AnyObject)
+        defer { lock.unlock() }
+        lock.lock()
+        
+        return delegates.contains(delegate as AnyObject)
     }
 }
 
@@ -90,6 +107,13 @@ public func +=<T>(left: MulticastDelegate<T>, right: T?) {
 /// - parameter left:   The multicast delegate
 /// - parameter right:  The multicast delegate to add
 public func +=<T>(left: MulticastDelegate<T>, right: MulticastDelegate<T>) {
+    defer {
+        left.lock.unlock()
+        right.lock.unlock()
+    }
+    left.lock.lock()
+    right.lock.lock()
+
     right.delegates.allObjects
         .compactMap { $0 as? T }
         .forEach { left.addDelegate($0) }
@@ -102,6 +126,9 @@ public func +=<T>(left: MulticastDelegate<T>, right: MulticastDelegate<T>) {
 /// - parameter left: The multicast delegate
 /// - parameter right: The delegate to be removed
 public func -=<T>(left: MulticastDelegate<T>, right: T?) {
+    defer { left.lock.unlock() }
+    left.lock.lock()
+    
     if let right = right {
         left.removeDelegate(right)
     }
@@ -122,5 +149,8 @@ infix operator |> : MulticastPrecedence
 ///
 /// - returns: The `MulticastDelegate` after all its delegates have been invoked
 public func |><T>(left: MulticastDelegate<T>, right: (T) -> ()) {
+    defer { left.lock.unlock() }
+    left.lock.lock()
+    
     left.invokeDelegates(right)
 }

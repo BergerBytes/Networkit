@@ -62,7 +62,7 @@ public class URLSessionNetworkTask<R: Requestable>: QueueableTask {
         await super.process()
         
         DispatchQueue.main.sync {
-            delegate.invokeDelegates { $0.requestStarted(id: requestIdentifier) }
+            delegate |> { $0.requestStarted(id: requestIdentifier) }
         }
                         
         guard
@@ -165,7 +165,7 @@ public class URLSessionNetworkTask<R: Requestable>: QueueableTask {
             
             resultCallbacks.forEach { $0(.success(response)) }
             
-            self.delegate.invokeDelegates { $0.requestCompleted(id: self.requestIdentifier) }
+            self.delegate |> { $0.requestCompleted(id: self.requestIdentifier) }
             self.dataCallbacks.forEach { $0(response) }
         }
     }
@@ -173,7 +173,7 @@ public class URLSessionNetworkTask<R: Requestable>: QueueableTask {
     open func failed(error: Error) {
         DispatchQueue.main.sync {
             resultCallbacks.forEach { $0(.failure(error)) }
-            self.delegate.invokeDelegates { $0.requestFailed(id: self.requestIdentifier, error: error) }
+            self.delegate |> { $0.requestFailed(id: self.requestIdentifier, error: error) }
         }
     }
 }
