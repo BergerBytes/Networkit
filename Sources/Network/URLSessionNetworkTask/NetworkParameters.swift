@@ -1,3 +1,17 @@
+//  Copyright © 2022 BergerBytes LLC. All rights reserved.
+//
+//  Permission to use, copy, modify, and/or distribute this software for any
+//  purpose with or without fee is hereby granted, provided that the above
+//  copyright notice and this permission notice appear in all copies.
+//
+//  THE SOFTWARE IS PROVIDED  AS IS AND THE AUTHOR DISCLAIMS ALL WARRANTIES
+//  WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
+//  MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY
+//  SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+//  WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
+//  ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR
+//  IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+
 import Foundation
 
 public protocol NetworkParameters: Hashable & Encodable {
@@ -5,28 +19,28 @@ public protocol NetworkParameters: Hashable & Encodable {
     func asBody() -> Data?
 }
 
-extension Int: UnencodedNetworkParameters {}
-extension Float: UnencodedNetworkParameters {}
-extension Double: UnencodedNetworkParameters {}
-extension String: UnencodedNetworkParameters {}
-extension Bool: UnencodedNetworkParameters {}
+extension Int: UnencodedNetworkParameters { }
+extension Float: UnencodedNetworkParameters { }
+extension Double: UnencodedNetworkParameters { }
+extension String: UnencodedNetworkParameters { }
+extension Bool: UnencodedNetworkParameters { }
 
-extension NetworkParameters {
+public extension NetworkParameters {
     /// Encodes all properties as query parameters.
-    public typealias Query = QueryNetworkParameters
-    
+    typealias Query = QueryNetworkParameters
+
     /// Encodes all properties into the request body as JSON.
-    public typealias Body = BodyNetworkParameters
-    
+    typealias Body = BodyNetworkParameters
+
     /// Does not encode any properties into query parameters or the request body.
-    public typealias Unencoded = UnencodedNetworkParameters
+    typealias Unencoded = UnencodedNetworkParameters
 }
 
 /// Encodes all properties as query parameters.
 public protocol QueryNetworkParameters: NetworkParameters { }
 public extension QueryNetworkParameters {
     func asBody() -> Data? { nil }
-    func asQuery() -> [String : Any]? {
+    func asQuery() -> [String: Any]? {
         try? DictionaryEncoder().encode(self)
     }
 }
@@ -40,26 +54,26 @@ public protocol BodyNetworkParameters: NetworkParameters {
 }
 
 public extension BodyNetworkParameters {
-    func asQuery() -> [String : Any]? { nil }
+    func asQuery() -> [String: Any]? { nil }
     func asBody() -> Data? {
         try? Self.encoder.encode(self)
     }
-    
+
     static var encoder: RequestBodyEncoder { JSONEncoder() }
 }
 
 /// Does not encode any properties into query parameters or the request body.
 public protocol UnencodedNetworkParameters: NetworkParameters { }
 public extension UnencodedNetworkParameters {
-    func asQuery() -> [String : Any]? { nil }
+    func asQuery() -> [String: Any]? { nil }
     func asBody() -> Data? { nil }
 }
 
 public struct NoParameters: NetworkParameters {
     public static let none = NoParameters()
 
-    private init() {}
-    
-    public func asQuery() -> [String : Any]? { nil }
+    private init() { }
+
+    public func asQuery() -> [String: Any]? { nil }
     public func asBody() -> Data? { nil }
 }
