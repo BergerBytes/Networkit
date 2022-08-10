@@ -15,11 +15,16 @@
 import Cache
 import Debug
 import Foundation
+import SwiftPlus
 
 struct ObserverEntry {
     let cancelTokenId: UUID
     let callback: (Data) -> Void
     weak var object: AnyObject?
+}
+
+public extension QueueDefinition {
+    static let `default` = QueueDefinition(id: "default", concurrentTaskPolicy: .limit(10))
 }
 
 public protocol NetworkManagerProvider {
@@ -51,6 +56,7 @@ public class NetworkManager: NetworkManagerProvider {
 
     public private(set) lazy var storage = try! Storage<String, Data>(diskConfig: Self.diskConfig, memoryConfig: Self.memoryConfig, transformer: TransformerFactory.forCodable(ofType: Data.self))
     private(set) var observers = [String: [ObserverEntry]]()
+
     private let observerQueue = DispatchQueue(label: "com.network.observerQueue")
 
     private var operations = NSHashTable<TaskOperation>.weakObjects()
@@ -59,6 +65,8 @@ public class NetworkManager: NetworkManagerProvider {
         queue.maxConcurrentOperationCount = 10
         return queue
     }()
+    
+    private let queueManager = QueueManager()
 
     init() {
         storage.addStorageObserver(self) { _, storage, change in
@@ -156,6 +164,7 @@ public class NetworkManager: NetworkManagerProvider {
 
             self.operations.add(operation)
             self.operationQueue.addOperation(operation)
+            self.queueManager.enqueue(task: task)
         }
     }
 
@@ -189,5 +198,23 @@ public class NetworkManager: NetworkManagerProvider {
 
     public func remove(object key: String) throws {
         try storage.removeObject(forKey: key)
+    }
+}
+
+class QueueManager {
+    var queues = [QueueDefinition: ConcurrentQueue<QueueOperation>]()
+    func enqueue<Task: QueueableTask>(task: Task) {
+        
+    }
+}
+
+class QueueOperation {
+    let id: String
+    
+    var inProgress: Bool = false
+    var completed: Bool = false
+    
+    init<Task: QueueableTask>(task: Task)  {
+        id = task.id
     }
 }
