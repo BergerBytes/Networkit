@@ -16,13 +16,13 @@ import Foundation
 
 open class QueueableTask: Identifiable, Hashable {
     public let id: String
-    public let type: TaskType
+    public let queueDefinition: QueueDefinition
 
     open var priority: Operation.QueuePriority = .normal
 
-    public init(id: String, type: TaskType) {
+    public init(id: String, queue: QueueDefinition) {
         self.id = id
-        self.type = type
+        self.queueDefinition = queue
     }
 
     open func preProcess() async { }
@@ -35,18 +35,6 @@ open class QueueableTask: Identifiable, Hashable {
 
     public static func == (lhs: QueueableTask, rhs: QueueableTask) -> Bool {
         lhs.id == rhs.id
-    }
-}
-
-public extension QueueableTask {
-    struct TaskType {
-        let name: String
-
-        public init(name: String) {
-            self.name = name
-        }
-
-        public static let standard = TaskType(name: "standard")
     }
 }
 

@@ -200,21 +200,3 @@ public class NetworkManager: NetworkManagerProvider {
         try storage.removeObject(forKey: key)
     }
 }
-
-class QueueManager {
-    var queues = [QueueDefinition: ConcurrentQueue<QueueOperation>]()
-    func enqueue<Task: QueueableTask>(task: Task) {
-        
-    }
-}
-
-class QueueOperation {
-    let id: String
-    
-    var inProgress: Bool = false
-    var completed: Bool = false
-    
-    init<Task: QueueableTask>(task: Task)  {
-        id = task.id
-    }
-}

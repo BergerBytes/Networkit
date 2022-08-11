@@ -13,6 +13,7 @@
 //  IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 import Foundation
+import SwiftPlus
 
 public struct QueueDefinition: Hashable {
     public enum ConcurrentTaskPolicy: Hashable {
@@ -66,3 +67,51 @@ let foo = DynamicQueueDefinition(
     defaultQueue: .default,
     rules: [.priority(.lowest ... .highest, to: .default)]
 )
+
+public class QueueManager {
+    var queues = [QueueDefinition: Queue]()
+    
+    func enqueue<Task: QueueableTask>(task: Task) {
+        queues[task.queueDefinition, default: .init(definition: task.queueDefinition)]
+            .enqueue(task: task)
+    }
+}
+
+class Queue {
+    private lazy var internalThread = DispatchQueue(label: "com.network.queue.\(definition.id)")
+    private let definition: QueueDefinition
+    private let pendingQueue: ConcurrentQueue<TaskOperation>
+    private let operationQueue: OperationQueue
+    private var operationCount = 0
+    
+    init(definition: QueueDefinition) {
+        self.definition = definition
+        pendingQueue = .init()
+        operationQueue = .init()
+        if case let .limit(count) = definition.concurrentTaskPolicy {
+            operationQueue.maxConcurrentOperationCount = Int(count)
+        }
+    }
+    
+    func enqueue(task: QueueableTask) {
+        internalThread.async {
+            let operation = task.newOperation()
+            operation.completionBlock = { [weak self] in
+                self?.internalThread.async {
+                    self?.operationCount -= 1
+                    self?.pendingQueue.dequeue().map {
+                        self?.operationCount += 1
+                        self?.operationQueue.addOperation($0)
+                    }
+                }
+            }
+            
+            if self.operationCount >= self.operationQueue.maxConcurrentOperationCount {
+                self.pendingQueue.enqueue(operation)
+            } else {
+                self.operationCount += 1
+                self.operationQueue.addOperation(operation)
+            }
+        }
+    }
+}

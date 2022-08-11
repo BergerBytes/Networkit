@@ -65,7 +65,7 @@ public class URLSessionNetworkTask<R: Requestable>: QueueableTask {
         }
         self.networkManager = networkManager
 
-        super.init(id: R.generateId(given: parameters), type: .standard)
+        super.init(id: R.generateId(given: parameters), queue: .default)
 
         if dataCallbacks.isEmpty {
             priority = .veryLow
