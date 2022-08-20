@@ -15,30 +15,30 @@
 import Foundation
 
 /// An operation to execute a QueueableTask
-class TaskOperation: Operation {
+public class TaskOperation: Operation {
     private let lockQueue = DispatchQueue(label: "com.queuetask.taskoperation", attributes: .concurrent)
 
     var id: String { task.id }
     let task: QueueableTask
 
-    override var isAsynchronous: Bool {
+    public override var isAsynchronous: Bool {
         true
     }
 
-    internal init(task: QueueableTask) {
+    public init(task: QueueableTask) {
         self.task = task
         super.init()
         queuePriority = task.priority
     }
 
     @available(*, unavailable, message: "TaskOperations should never be started directly!")
-    override func start() {
+    public override func start() {
         isFinished = false
         isExecuting = true
         main()
     }
 
-    override func main() {
+    public override func main() {
         Task {
             await task.preProcess()
             await task.process()
@@ -51,12 +51,12 @@ class TaskOperation: Operation {
         isFinished = true
     }
 
-    override var description: String {
+    public override var description: String {
         "Operation: STARTED: \(isExecuting), PRIORITY: \(queuePriority.description) \"\(task.id.components(separatedBy: ".com").last!.split(separator: "|").first!.replacingOccurrences(of: " ", with: ""))\""
     }
 
     private var _isExecuting: Bool = false
-    override private(set) var isExecuting: Bool {
+    public override private(set) var isExecuting: Bool {
         get {
             lockQueue.sync { () -> Bool in
                 _isExecuting
@@ -72,7 +72,7 @@ class TaskOperation: Operation {
     }
 
     private var _isFinished: Bool = false
-    override private(set) var isFinished: Bool {
+    public override private(set) var isFinished: Bool {
         get {
             lockQueue.sync { () -> Bool in
                 _isFinished
