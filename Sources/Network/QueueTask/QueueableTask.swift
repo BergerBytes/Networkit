@@ -15,7 +15,8 @@
 import Foundation
 
 open class QueueableTask: Identifiable, Hashable {
-    public let id: String
+    public typealias ID = String
+    public let id: ID
     public let queueDefinition: QueueDefinition
 
     open var priority: Operation.QueuePriority = .normal

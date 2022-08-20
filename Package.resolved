@@ -18,15 +18,6 @@
           "revision": "a53983cd1a28bc33294ae0e2eeaef30bad7281b2",
           "version": "1.5.1"
         }
-      },
-      {
-        "package": "Swift+",
-        "repositoryURL": "https://github.com/BergerBytes/SwiftPlus",
-        "state": {
-          "branch": "main",
-          "revision": "c332555265947bada4922ac46aa83ff989f2c28b",
-          "version": null
-        }
       }
     ]
   },

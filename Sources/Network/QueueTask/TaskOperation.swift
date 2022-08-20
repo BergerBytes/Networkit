@@ -18,7 +18,7 @@ import Foundation
 class TaskOperation: Operation {
     private let lockQueue = DispatchQueue(label: "com.queuetask.taskoperation", attributes: .concurrent)
 
-    var id: String { task.id }
+    var id: QueueableTask.ID { task.id }
     let task: QueueableTask
 
     override var isAsynchronous: Bool {
@@ -85,5 +85,11 @@ class TaskOperation: Operation {
             }
             didChangeValue(forKey: "isFinished")
         }
+    }
+}
+
+extension TaskOperation: Comparable {
+    static func < (lhs: TaskOperation, rhs: TaskOperation) -> Bool {
+        lhs.queuePriority.rawValue < rhs.queuePriority.rawValue
     }
 }

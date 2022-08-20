@@ -13,7 +13,6 @@
 //  IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 import Foundation
-import SwiftPlus
 
 public struct QueueDefinition: Hashable {
     public enum ConcurrentTaskPolicy: Hashable {
@@ -80,7 +79,7 @@ public class QueueManager {
 class Queue {
     private lazy var internalThread = DispatchQueue(label: "com.network.queue.\(definition.id)")
     private let definition: QueueDefinition
-    private let pendingQueue: ConcurrentQueue<TaskOperation>
+    private let pendingQueue: PriorityQueue<TaskOperation>
     private let operationQueue: OperationQueue
     private var operationCount = 0
     
@@ -97,20 +96,24 @@ class Queue {
         internalThread.async {
             let operation = task.newOperation()
             operation.completionBlock = { [weak self] in
-                self?.internalThread.async {
-                    self?.operationCount -= 1
-                    self?.pendingQueue.dequeue().map {
-                        self?.operationCount += 1
-                        self?.operationQueue.addOperation($0)
+                guard let self = self else { return }
+                self.internalThread.async {
+                    self.operationCount -= 1
+                    while
+                        self.operationCount < self.operationQueue.maxConcurrentOperationCount,
+                        let next = self.pendingQueue.dequeue()
+                    {
+                        self.operationCount += 1
+                        self.operationQueue.addOperation(next)
                     }
                 }
-            }
-            
-            if self.operationCount >= self.operationQueue.maxConcurrentOperationCount {
-                self.pendingQueue.enqueue(operation)
-            } else {
-                self.operationCount += 1
-                self.operationQueue.addOperation(operation)
+                
+                if self.operationCount >= self.operationQueue.maxConcurrentOperationCount {
+                    self.pendingQueue.enqueue(operation)
+                } else {
+                    self.operationCount += 1
+                    self.operationQueue.addOperation(operation)
+                }
             }
         }
     }
