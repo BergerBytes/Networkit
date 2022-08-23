@@ -36,7 +36,8 @@ public protocol NetworkManagerProvider {
 
     func isObjectExpired(for key: String) throws -> Bool
     func expiryDate(for key: String) throws -> Date
-
+    func expireObject(for key: String) throws
+    
     func remove(object key: String) throws
     func removeExpiredObjects() throws
     func removeAllObjects() throws
@@ -185,6 +186,14 @@ public class NetworkManager: NetworkManagerProvider {
 
     public func expiryDate(for key: String) throws -> Date {
         try storage.expiryForObject(forKey: key).date
+    }
+    
+    public func expireObject(for key: String) throws {
+        try storage.setObject(
+            try storage.object(forKey: key),
+            forKey: key,
+            expiry: .seconds(0)
+        )
     }
 
     public func removeExpiredObjects() throws {
