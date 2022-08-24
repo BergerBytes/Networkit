@@ -196,18 +196,33 @@ public class URLSessionNetworkTask<R: Requestable>: QueueableTask {
 // MARK: - MergableRequest
 
 extension URLSessionNetworkTask: MergableTask {
-    public func shouldBeMerged(with task: some MergableTask) -> Bool {
-        guard let task = task as? Self else { return false }
-        return id == task.id
-    }
+    #if compiler(>=5.7)
+        public func shouldBeMerged(with task: some MergableTask) -> Bool {
+            guard let task = task as? Self else { return false }
+            return id == task.id
+        }
 
-    public func merge(into existingTask: some MergableTask) throws {
-        guard let existingTask = existingTask as? Self else { return }
+        public func merge(into existingTask: some MergableTask) throws {
+            guard let existingTask = existingTask as? Self else { return }
 
-        existingTask.delegate += delegate
-        existingTask.resultCallbacks += resultCallbacks
-        existingTask.dataCallbacks += dataCallbacks
-    }
+            existingTask.delegate += delegate
+            existingTask.resultCallbacks += resultCallbacks
+            existingTask.dataCallbacks += dataCallbacks
+        }
+    #else
+        public func shouldBeMerged(with task: MergableTask) -> Bool {
+            guard let task = task as? Self else { return false }
+            return id == task.id
+        }
+
+        public func merge(into existingTask: MergableTask) throws {
+            guard let existingTask = existingTask as? Self else { return }
+
+            existingTask.delegate += delegate
+            existingTask.resultCallbacks += resultCallbacks
+            existingTask.dataCallbacks += dataCallbacks
+        }
+    #endif
 }
 
 // MARK: - CustomDebugStringConvertible

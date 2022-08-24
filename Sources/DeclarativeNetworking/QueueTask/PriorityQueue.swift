@@ -28,9 +28,15 @@ final class PriorityQueue<Element: TaskOperation> {
 
     init() { }
 
-    init(_ sequence: some Sequence<Element>) {
-        array = Array(sequence)
-    }
+    #if compiler(>=5.7)
+        init(_ sequence: some Sequence<Element>) {
+            array = Array(sequence)
+        }
+    #else
+        init(_ sequence: [Element]) {
+            array = sequence
+        }
+    #endif
 }
 
 extension PriorityQueue {
@@ -57,8 +63,8 @@ extension PriorityQueue {
 
     private func sort() {
         array = array.sorted(by: { lhs, rhs in
-            guard let lhs else { return true }
-            guard let rhs else { return false }
+            guard let lhs = lhs else { return true }
+            guard let rhs = rhs else { return false }
 
             return lhs > rhs
         })

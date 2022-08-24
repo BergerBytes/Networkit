@@ -19,6 +19,11 @@ public protocol MergableTask: QueueableTask {
     /// Check for wether or this task should be merged with the provided task.
     /// - Parameter task: The task to merge with.
     /// - Returns: Bool True if tasks should be merged.
-    func shouldBeMerged(with task: some MergableTask) -> Bool
-    func merge(into task: some MergableTask) throws
+    #if compiler(>=5.7)
+        func shouldBeMerged(with task: some MergableTask) -> Bool
+        func merge(into task: some MergableTask) throws
+    #else
+        func shouldBeMerged(with task: MergableTask) -> Bool
+        func merge(into task: MergableTask) throws
+    #endif
 }
