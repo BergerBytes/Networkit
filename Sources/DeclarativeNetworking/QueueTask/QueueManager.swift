@@ -14,35 +14,21 @@
 
 import Foundation
 
-open class QueueableTask: Identifiable, Hashable {
-    public typealias ID = String
-    public let id: ID
-    public let queueDefinition: QueueDefinition
+public class QueueManager {
+    public static let shared = QueueManager()
+    var queues = [QueueDefinition: TaskQueue]()
 
-    open var priority: Operation.QueuePriority = .normal
-
-    public init(id: String, queue: QueueDefinition) {
-        self.id = id
-        queueDefinition = queue
+    func set(priority: Operation.QueuePriority, for id: QueueableTask.ID) {
+        queues.forEach { $0.value.set(priority: priority, for: id) }
     }
 
-    open func preProcess() async { }
+    func enqueue<Task: QueueableTask>(task: Task) {
+        var queue = queues[task.queueDefinition]
+        if queue == nil {
+            queue = .init(definition: task.queueDefinition)
+            queues[task.queueDefinition] = queue
+        }
 
-    open func process() async { }
-
-    public func hash(into hasher: inout Hasher) {
-        hasher.combine(id)
-    }
-
-    public static func == (lhs: QueueableTask, rhs: QueueableTask) -> Bool {
-        lhs.id == rhs.id
-    }
-}
-
-// MARK: - Operation Creation
-
-extension QueueableTask {
-    func newOperation() -> TaskOperation {
-        TaskOperation(task: self)
+        queue!.enqueue(task: task)
     }
 }

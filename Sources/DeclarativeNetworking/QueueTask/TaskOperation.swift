@@ -12,7 +12,6 @@
 //  ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR
 //  IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
-
 import Foundation
 
 /// An operation to execute a QueueableTask
@@ -22,7 +21,7 @@ public class TaskOperation: Operation {
     var id: QueueableTask.ID { task.id }
     let task: QueueableTask
 
-    public override var isAsynchronous: Bool {
+    override public var isAsynchronous: Bool {
         true
     }
 
@@ -33,13 +32,13 @@ public class TaskOperation: Operation {
     }
 
     @available(*, unavailable, message: "TaskOperations should never be started directly!")
-    public override func start() {
+    override public func start() {
         isFinished = false
         isExecuting = true
         main()
     }
 
-    public override func main() {
+    override public func main() {
         Task {
             await task.preProcess()
             await task.process()
@@ -52,12 +51,12 @@ public class TaskOperation: Operation {
         isFinished = true
     }
 
-    public override var description: String {
+    override public var description: String {
         "Operation: STARTED: \(isExecuting), PRIORITY: \(queuePriority.description) \"\(task.id.components(separatedBy: ".com").last!.split(separator: "|").first!.replacingOccurrences(of: " ", with: ""))\""
     }
 
     private var _isExecuting: Bool = false
-    public override private(set) var isExecuting: Bool {
+    override public private(set) var isExecuting: Bool {
         get {
             lockQueue.sync { () -> Bool in
                 _isExecuting
@@ -73,7 +72,7 @@ public class TaskOperation: Operation {
     }
 
     private var _isFinished: Bool = false
-    public override private(set) var isFinished: Bool {
+    override public private(set) var isFinished: Bool {
         get {
             lockQueue.sync { () -> Bool in
                 _isFinished

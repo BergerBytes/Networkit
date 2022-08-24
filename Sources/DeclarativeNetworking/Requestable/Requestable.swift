@@ -23,7 +23,7 @@ public protocol Requestable: Decodable {
     static var decoder: ResponseDecoder { get }
 
     static var queue: QueuePolicy { get }
-    
+
     static var method: RequestMethod { get }
 
     /// The scheme subcomponent of the URL. Defaults to "https"
@@ -65,8 +65,8 @@ public extension Requestable {
     static var scheme: String { "https" }
     static var port: Int? { nil }
     static var decoder: ResponseDecoder { JSONDecoder() }
-    static var queue: QueuePolicy { .single(queue: .default) }
-    
+    static var queue: QueuePolicy { .single(queue: .networkDefault) }
+
     static func url(given parameters: P) -> URL {
         var components = URLComponents()
         components.scheme = scheme

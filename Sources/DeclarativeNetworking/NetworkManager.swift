@@ -23,7 +23,7 @@ struct ObserverEntry {
 }
 
 public extension QueueDefinition {
-    static let `default` = QueueDefinition(id: "default", concurrentTaskPolicy: .limit(10))
+    static let networkDefault = QueueDefinition(id: "com.networkmanager.default", concurrentTaskPolicy: .limit(10))
 }
 
 public protocol NetworkManagerProvider {
@@ -37,7 +37,7 @@ public protocol NetworkManagerProvider {
     func isObjectExpired(for key: String) throws -> Bool
     func expiryDate(for key: String) throws -> Date
     func expireObject(for key: String) throws
-    
+
     func remove(object key: String) throws
     func removeExpiredObjects() throws
     func removeAllObjects() throws
@@ -59,14 +59,14 @@ public class NetworkManager: NetworkManagerProvider {
 
     private let observerQueue = DispatchQueue(label: "com.network.observerQueue")
 
-    private var operations = NSHashTable<TaskOperation>.weakObjects()
-    private let operationQueue: OperationQueue = {
-        let queue = OperationQueue()
-        queue.maxConcurrentOperationCount = 10
-        return queue
-    }()
-    
-    private let queueManager = QueueManager()
+//    private var operations = NSHashTable<TaskOperation>.weakObjects()
+//    private let operationQueue: OperationQueue = {
+//        let queue = OperationQueue()
+//        queue.maxConcurrentOperationCount = 10
+//        return queue
+//    }()
+
+    private let queueManager = QueueManager.shared
 
     init() {
         storage.addStorageObserver(self) { _, storage, change in
@@ -93,9 +93,7 @@ public class NetworkManager: NetworkManagerProvider {
                             self.observers[key] = entries
 
                             if entries.isEmpty {
-                                self.operations
-                                    .allObjects.first(where: { $0.task.id == key })?
-                                    .queuePriority = .veryLow
+                                self.queueManager.set(priority: .veryLow, for: key)
                             }
                         }
 
@@ -128,44 +126,42 @@ public class NetworkManager: NetworkManagerProvider {
             self?.observerQueue.async {
                 self?.observers[key, default: []].removeAll(where: { $0.cancelTokenId == cancelTokenId })
                 if self?.observers[key]?.isEmpty == true {
-                    self?.operations
-                        .allObjects.first(where: { $0.task.id == key })?
-                        .queuePriority = .veryLow
+                    self?.queueManager.set(priority: .veryLow, for: key)
                 }
             }
         }
     }
 
     public func enqueue(_ task: QueueableTask) {
-        observerQueue.async {
-            if
-                let newTask = task as? MergableRequest,
-                let existingTask = self.operations.allObjects
-                .filter({ !$0.isFinished && !$0.isCancelled })
-                .compactMap({ $0.task as? MergableRequest })
-                .first(where: { newTask.shouldBeMerged(with: $0) })
-            {
-                do {
-                    try newTask.merge(into: existingTask)
-                    let operation = self.operations.allObjects.first(where: { $0.id == existingTask.id })
-                    operation?.queuePriority = operation?.queuePriority.increment() ?? .normal
-                    return
-                } catch {
-                    Log.error(in: .network, error)
-                }
-            }
-
-            let operation = task.newOperation()
-            operation.completionBlock = { [weak operation] in
-                self.observerQueue.async {
-                    self.operations.remove(operation)
-                }
-            }
-
-            self.operations.add(operation)
-            self.operationQueue.addOperation(operation)
-            self.queueManager.enqueue(task: task)
-        }
+//        observerQueue.async {
+//            if
+//                let newTask = task as? MergableRequest,
+//                let existingTask = self.operations.allObjects
+//                .filter({ !$0.isFinished && !$0.isCancelled })
+//                .compactMap({ $0.task as? MergableRequest })
+//                .first(where: { newTask.shouldBeMerged(with: $0) })
+//            {
+//                do {
+//                    try newTask.merge(into: existingTask)
+//                    let operation = self.operations.allObjects.first(where: { $0.id == existingTask.id })
+//                    operation?.queuePriority = operation?.queuePriority.increment() ?? .normal
+//                    return
+//                } catch {
+//                    Log.error(in: .network, error)
+//                }
+//            }
+//
+//            let operation = task.newOperation()
+//            operation.completionBlock = { [weak operation] in
+//                self.observerQueue.async {
+//                    self.operations.remove(operation)
+//                }
+//            }
+//
+//            self.operations.add(operation)
+//            self.operationQueue.addOperation(operation)
+        queueManager.enqueue(task: task)
+//        }
     }
 
     public func request<T: Requestable>(_: T.Type, delegate: RequestDelegateConfig?, dataCallback: @escaping (T) -> Void) where T.P == NoParameters {
@@ -187,7 +183,7 @@ public class NetworkManager: NetworkManagerProvider {
     public func expiryDate(for key: String) throws -> Date {
         try storage.expiryForObject(forKey: key).date
     }
-    
+
     public func expireObject(for key: String) throws {
         try storage.setObject(
             try storage.object(forKey: key),

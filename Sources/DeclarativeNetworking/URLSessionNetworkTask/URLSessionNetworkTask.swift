@@ -65,7 +65,11 @@ public class URLSessionNetworkTask<R: Requestable>: QueueableTask {
         }
         self.networkManager = networkManager
 
-        super.init(id: R.generateId(given: parameters), queue: .default)
+        guard case let .single(queue) = R.queue else {
+            fatalError("The only currently supported QueuePolicy is single")
+        }
+
+        super.init(id: R.generateId(given: parameters), queue: queue)
 
         if dataCallbacks.isEmpty {
             priority = .veryLow
@@ -191,18 +195,18 @@ public class URLSessionNetworkTask<R: Requestable>: QueueableTask {
 
 // MARK: - MergableRequest
 
-extension URLSessionNetworkTask: MergableRequest {
-    public func shouldBeMerged(with task: MergableRequest) -> Bool {
+extension URLSessionNetworkTask: MergableTask {
+    public func shouldBeMerged(with task: some MergableTask) -> Bool {
         guard let task = task as? Self else { return false }
         return id == task.id
     }
 
-    public func merge(into existingTask: MergableRequest) throws {
+    public func merge(into existingTask: some MergableTask) throws {
+        guard let existingTask = existingTask as? Self else { return }
+
         existingTask.delegate += delegate
-        if let existingTask = existingTask as? URLSessionNetworkTask<R> {
-            existingTask.resultCallbacks += resultCallbacks
-            existingTask.dataCallbacks += dataCallbacks
-        }
+        existingTask.resultCallbacks += resultCallbacks
+        existingTask.dataCallbacks += dataCallbacks
     }
 }
 
