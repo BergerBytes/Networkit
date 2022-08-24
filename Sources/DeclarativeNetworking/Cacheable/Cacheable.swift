@@ -63,8 +63,9 @@ public extension Cacheable where Self: Requestable {
     static func observe(on object: AnyObject, given parameters: P, token: inout CancellationToken?, delegate: RequestDelegateConfig?, with networkManager: NetworkManagerProvider = NetworkManager.shared, dataCallback: @escaping (_ data: Self) -> Void) -> CancellationToken {
         let request = Self.requestTask(given: parameters, delegate: delegate, dataCallback: { _ in })
 
-        // If there is an existing token we can compare the requestKey with our new request id and avoid returning identical data.
-        let duplicateRequest = token != nil && request.id == token?.requestKey
+        // If there is an uncanceled existing token,
+        // we can compare the requestKey with our new request id and avoid returning rebuilding observer.
+        let duplicateRequest = token != nil && token?.isCanceled == false && request.id == token?.requestKey
 
         if !duplicateRequest {
             token?.cancel()

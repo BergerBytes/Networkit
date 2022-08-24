@@ -18,6 +18,8 @@ public class CancellationToken {
     private let cancellationClosure: () -> Void
     let requestKey: String
 
+    public private(set) var isCanceled = false
+
     public init(key: String, cancellationClosure: @escaping () -> Void) {
         requestKey = key
         self.cancellationClosure = cancellationClosure
@@ -25,5 +27,6 @@ public class CancellationToken {
 
     public func cancel() {
         cancellationClosure()
+        isCanceled = true
     }
 }
