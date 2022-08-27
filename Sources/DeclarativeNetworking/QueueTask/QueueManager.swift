@@ -16,13 +16,20 @@ import Foundation
 
 public class QueueManager {
     public static let shared = QueueManager()
-    var queues = [QueueDefinition: TaskQueue]()
-
+    private let lock = NSLock()
+    private var queues = [QueueDefinition: TaskQueue]()
+    
     func set(priority: Operation.QueuePriority, for id: QueueableTask.ID) {
+        defer { lock.unlock() }
+        lock.lock()
+        
         queues.forEach { $0.value.set(priority: priority, for: id) }
     }
 
     func enqueue<Task: QueueableTask>(task: Task) {
+        defer { lock.unlock() }
+        lock.lock()
+        
         var queue = queues[task.queueDefinition]
         if queue == nil {
             queue = .init(definition: task.queueDefinition)
