@@ -15,8 +15,8 @@
 import Foundation
 
 public protocol NetworkParameters: Hashable & Encodable {
-    func asQuery() -> [String: Any]?
-    func asBody() -> Data?
+    @inlinable func asQuery() -> [String: Any]?
+    @inlinable func asBody() -> Data?
 }
 
 extension Int: UnencodedNetworkParameters { }
@@ -39,7 +39,7 @@ public extension NetworkParameters {
 /// Encodes all properties as query parameters.
 public protocol QueryNetworkParameters: NetworkParameters { }
 public extension QueryNetworkParameters {
-    func asBody() -> Data? { nil }
+    @inlinable func asBody() -> Data? { nil }
     func asQuery() -> [String: Any]? {
         try? DictionaryEncoder().encode(self)
     }
@@ -54,19 +54,19 @@ public protocol BodyNetworkParameters: NetworkParameters {
 }
 
 public extension BodyNetworkParameters {
-    func asQuery() -> [String: Any]? { nil }
-    func asBody() -> Data? {
+    @inlinable func asQuery() -> [String: Any]? { nil }
+    @inlinable func asBody() -> Data? {
         try? Self.encoder.encode(self)
     }
 
-    static var encoder: RequestBodyEncoder { JSONEncoder() }
+    @inlinable static var encoder: RequestBodyEncoder { JSONEncoder() }
 }
 
 /// Does not encode any properties into query parameters or the request body.
 public protocol UnencodedNetworkParameters: NetworkParameters { }
 public extension UnencodedNetworkParameters {
-    func asQuery() -> [String: Any]? { nil }
-    func asBody() -> Data? { nil }
+    @inlinable func asQuery() -> [String: Any]? { nil }
+    @inlinable func asBody() -> Data? { nil }
 }
 
 public struct NoParameters: NetworkParameters {
@@ -74,6 +74,6 @@ public struct NoParameters: NetworkParameters {
 
     private init() { }
 
-    public func asQuery() -> [String: Any]? { nil }
-    public func asBody() -> Data? { nil }
+    @inlinable public func asQuery() -> [String: Any]? { nil }
+    @inlinable public func asBody() -> Data? { nil }
 }

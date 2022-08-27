@@ -228,7 +228,7 @@ extension URLSessionNetworkTask: MergableTask {
 // MARK: - CustomDebugStringConvertible
 
 extension URLSessionNetworkTask: CustomDebugStringConvertible {
-    public var debugDescription: String {
+    @inlinable public var debugDescription: String {
         "\(id) | \(priority)"
     }
 }

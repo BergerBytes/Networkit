@@ -59,13 +59,6 @@ public class NetworkManager: NetworkManagerProvider {
 
     private let observerQueue = DispatchQueue(label: "com.network.observerQueue")
 
-//    private var operations = NSHashTable<TaskOperation>.weakObjects()
-//    private let operationQueue: OperationQueue = {
-//        let queue = OperationQueue()
-//        queue.maxConcurrentOperationCount = 10
-//        return queue
-//    }()
-
     private let queueManager = QueueManager.shared
 
     init() {
@@ -133,42 +126,14 @@ public class NetworkManager: NetworkManagerProvider {
     }
 
     public func enqueue(_ task: QueueableTask) {
-//        observerQueue.async {
-//            if
-//                let newTask = task as? MergableRequest,
-//                let existingTask = self.operations.allObjects
-//                .filter({ !$0.isFinished && !$0.isCancelled })
-//                .compactMap({ $0.task as? MergableRequest })
-//                .first(where: { newTask.shouldBeMerged(with: $0) })
-//            {
-//                do {
-//                    try newTask.merge(into: existingTask)
-//                    let operation = self.operations.allObjects.first(where: { $0.id == existingTask.id })
-//                    operation?.queuePriority = operation?.queuePriority.increment() ?? .normal
-//                    return
-//                } catch {
-//                    Log.error(in: .network, error)
-//                }
-//            }
-//
-//            let operation = task.newOperation()
-//            operation.completionBlock = { [weak operation] in
-//                self.observerQueue.async {
-//                    self.operations.remove(operation)
-//                }
-//            }
-//
-//            self.operations.add(operation)
-//            self.operationQueue.addOperation(operation)
         queueManager.enqueue(task: task)
-//        }
     }
 
-    public func request<T: Requestable>(_: T.Type, delegate: RequestDelegateConfig?, dataCallback: @escaping (T) -> Void) where T.P == NoParameters {
+    @inlinable public func request<T: Requestable>(_: T.Type, delegate: RequestDelegateConfig?, dataCallback: @escaping (T) -> Void) where T.P == NoParameters {
         enqueue(T.requestTask(delegate: delegate, dataCallback: dataCallback))
     }
 
-    public func get(object key: String) throws -> Data? {
+    @inlinable public func get(object key: String) throws -> Data? {
         try storage.object(forKey: key)
     }
 
@@ -176,15 +141,15 @@ public class NetworkManager: NetworkManagerProvider {
         try storage.setObject(object, forKey: key, expiry: cachePolicy.asExpiry())
     }
 
-    public func isObjectExpired(for key: String) throws -> Bool {
+    @inlinable public func isObjectExpired(for key: String) throws -> Bool {
         try storage.isExpiredObject(forKey: key)
     }
 
-    public func expiryDate(for key: String) throws -> Date {
+    @inlinable public func expiryDate(for key: String) throws -> Date {
         try storage.expiryForObject(forKey: key).date
     }
 
-    public func expireObject(for key: String) throws {
+    @inlinable public func expireObject(for key: String) throws {
         try storage.setObject(
             try storage.object(forKey: key),
             forKey: key,
@@ -192,15 +157,15 @@ public class NetworkManager: NetworkManagerProvider {
         )
     }
 
-    public func removeExpiredObjects() throws {
+    @inlinable public func removeExpiredObjects() throws {
         try storage.removeExpiredObjects()
     }
 
-    public func removeAllObjects() throws {
+    @inlinable public func removeAllObjects() throws {
         try storage.removeAll()
     }
 
-    public func remove(object key: String) throws {
+    @inlinable public func remove(object key: String) throws {
         try storage.removeObject(forKey: key)
     }
 }

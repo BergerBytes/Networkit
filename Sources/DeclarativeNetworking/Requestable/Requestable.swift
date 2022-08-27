@@ -85,7 +85,7 @@ public extension Requestable {
 public extension Requestable {
     static func headers(given _: P) -> [String: String]? { nil }
 
-    static func fetch(given parameters: P, delegate: RequestDelegateConfig?, with networkManager: NetworkManagerProvider = NetworkManager.shared, dataCallback: @escaping (Self) -> Void) {
+    @inlinable static func fetch(given parameters: P, delegate: RequestDelegateConfig?, with networkManager: NetworkManagerProvider = NetworkManager.shared, dataCallback: @escaping (Self) -> Void) {
         networkManager.enqueue(Self.requestTask(given: parameters, delegate: delegate, dataCallback: dataCallback))
     }
 
@@ -108,11 +108,11 @@ public extension Requestable {
     /// Create a URLSessionNetworkTask for a request response.
     /// - Parameter parameters: The parameters for the network response.
     /// - Returns: A URL session task. (QueueableTask)
-    static func requestTask(given parameters: P, delegate: RequestDelegateConfig?, dataCallback: ((Self) -> Void)?) -> QueueableTask {
+    @inlinable static func requestTask(given parameters: P, delegate: RequestDelegateConfig?, dataCallback: ((Self) -> Void)?) -> QueueableTask {
         requestTask(given: parameters, delegate: delegate, dataCallback: dataCallback, resultCallback: nil)
     }
 
-    static func requestTask(given parameters: P, callback: @escaping (Result<Self, Error>) -> Void) -> QueueableTask {
+    @inlinable static func requestTask(given parameters: P, callback: @escaping (Result<Self, Error>) -> Void) -> QueueableTask {
         requestTask(given: parameters, delegate: nil, dataCallback: nil, resultCallback: callback)
     }
 
@@ -164,15 +164,15 @@ public extension Requestable {
 public extension Requestable where P == NoParameters {
     /// Create a URLSessionNetworkTask for a request response without any parameter requirements.
     /// - Returns: The URL session task. (QueueableTask)
-    static func requestTask(delegate: RequestDelegateConfig?, dataCallback: @escaping (_ data: Self) -> Void) -> QueueableTask {
+    @inlinable static func requestTask(delegate: RequestDelegateConfig?, dataCallback: @escaping (_ data: Self) -> Void) -> QueueableTask {
         requestTask(given: .none, delegate: delegate, dataCallback: dataCallback)
     }
 
-    static func fetch(delegate: RequestDelegateConfig?, with networkManager: NetworkManagerProvider = NetworkManager.shared, dataCallback: @escaping (Self) -> Void) {
+    @inlinable static func fetch(delegate: RequestDelegateConfig?, with networkManager: NetworkManagerProvider = NetworkManager.shared, dataCallback: @escaping (Self) -> Void) {
         fetch(given: .none, delegate: delegate, with: networkManager, dataCallback: dataCallback)
     }
 
-    static func fetch(with networkManager: NetworkManagerProvider = NetworkManager.shared) async throws -> Self {
+    @inlinable static func fetch(with networkManager: NetworkManagerProvider = NetworkManager.shared) async throws -> Self {
         try await fetch(given: .none, with: networkManager)
     }
 }
@@ -182,15 +182,15 @@ public extension Requestable where P == NoParameters {
 public extension Requestable where P: EmptyInitializable {
     /// Create a URLSessionNetworkTask for a request response without any parameter requirements.
     /// - Returns: The URL session task. (QueueableTask)
-    static func requestTask(delegate: RequestDelegateConfig?, dataCallback: @escaping (_ data: Self) -> Void) -> QueueableTask {
+    @inlinable static func requestTask(delegate: RequestDelegateConfig?, dataCallback: @escaping (_ data: Self) -> Void) -> QueueableTask {
         requestTask(given: .init(), delegate: delegate, dataCallback: dataCallback)
     }
 
-    static func fetch(delegate: RequestDelegateConfig?, with networkManager: NetworkManagerProvider = NetworkManager.shared, dataCallback: @escaping (Self) -> Void) {
+    @inlinable static func fetch(delegate: RequestDelegateConfig?, with networkManager: NetworkManagerProvider = NetworkManager.shared, dataCallback: @escaping (Self) -> Void) {
         fetch(given: .init(), delegate: delegate, with: networkManager, dataCallback: dataCallback)
     }
 
-    static func fetch(with networkManager: NetworkManagerProvider = NetworkManager.shared) async throws -> Self {
+    @inlinable static func fetch(with networkManager: NetworkManagerProvider = NetworkManager.shared) async throws -> Self {
         try await fetch(given: .init(), with: networkManager)
     }
 }
