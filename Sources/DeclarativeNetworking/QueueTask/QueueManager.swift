@@ -19,14 +19,14 @@ public class QueueManager {
     private let lock = NSLock()
     private var queues = [QueueDefinition: TaskQueue]()
     
-    func set(priority: Operation.QueuePriority, for id: QueueableTask.ID) {
+    public func set(priority: Operation.QueuePriority, for id: QueueableTask.ID) {
         defer { lock.unlock() }
         lock.lock()
         
         queues.forEach { $0.value.set(priority: priority, for: id) }
     }
 
-    func enqueue<Task: QueueableTask>(task: Task) {
+    public func enqueue<Task: QueueableTask>(task: Task) {
         defer { lock.unlock() }
         lock.lock()
         
