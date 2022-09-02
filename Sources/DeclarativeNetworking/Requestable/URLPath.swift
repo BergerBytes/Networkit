@@ -15,7 +15,7 @@
 import Foundation
 
 public class URLPath: ExpressibleByStringLiteral {
-    private(set) var pathString = ""
+    public private(set) var pathString = ""
 
     public required init(stringLiteral string: String) {
         add(string)
