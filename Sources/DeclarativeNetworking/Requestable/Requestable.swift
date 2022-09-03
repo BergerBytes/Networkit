@@ -59,6 +59,14 @@ public protocol Requestable: Decodable {
     static func generateId(given parameters: P) -> String
 
     static func requestTask(given parameters: P, delegate: RequestDelegateConfig?, dataCallback: ((Self) -> Void)?, resultCallback: ((Result<Self, Error>) -> Void)?) -> QueueableTask
+    
+    /// The URL for the request.
+    ///
+    /// The URL is automatically generated based on the ``scheme-1bbpn``, ``host``, ``port-5i9re`` and ``path(given:)``.
+    /// Implementing this method requires building a complete url, excluding query params, to make the request against.
+    /// - Parameter parameters: The parameters for defined for this request.
+    /// - Returns: The url to make the request to.
+    static func url(given parameters: P) -> URL
 }
 
 public extension Requestable {
