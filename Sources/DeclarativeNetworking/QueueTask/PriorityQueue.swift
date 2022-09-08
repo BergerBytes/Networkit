@@ -22,21 +22,15 @@ import Foundation
 final class PriorityQueue<Element: TaskOperation> {
     private var array = [Element?]()
     private var head = 0
-
+    
     var isEmpty: Bool { count == 0 }
     var count: Int { array.count - head }
-
+    
     init() { }
-
-    #if compiler(>=5.7)
-        init(_ sequence: some Sequence<Element>) {
-            array = Array(sequence)
-        }
-    #else
-        init(_ sequence: [Element]) {
-            array = sequence
-        }
-    #endif
+    
+    init(_ sequence: [Element]) {
+        array = sequence
+    }
 }
 
 extension PriorityQueue {
