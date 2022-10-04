@@ -59,7 +59,7 @@ public protocol Requestable: Decodable {
     static func generateId(given parameters: P) -> String
 
     static func requestTask(given parameters: P, delegate: RequestDelegateConfig?, dataCallback: ((Self) -> Void)?, resultCallback: ((Result<Self, Error>) -> Void)?) -> QueueableTask
-    
+
     /// The URL for the request.
     ///
     /// The URL is automatically generated based on the ``scheme-1bbpn``, ``host``, ``port-5i9re`` and ``path(given:)``.
@@ -69,11 +69,14 @@ public protocol Requestable: Decodable {
     static func url(given parameters: P) -> URL
 }
 
+// MARK: - Default property implementation
+
 public extension Requestable {
     static var scheme: String { "https" }
     static var port: Int? { nil }
     static var decoder: ResponseDecoder { JSONDecoder() }
     static var queue: QueuePolicy { .single(queue: .networkDefault) }
+    static func headers(given _: P) -> [String: String]? { nil }
 
     static func url(given parameters: P) -> URL {
         var components = URLComponents()
@@ -90,14 +93,28 @@ public extension Requestable {
     }
 }
 
-public extension Requestable {
-    static func headers(given _: P) -> [String: String]? { nil }
+// MARK: - Request
 
+public extension Requestable {
+    @available(*, deprecated, renamed: "request(given:delegate:with:dataCallback:)")
     @inlinable static func fetch(given parameters: P, delegate: RequestDelegateConfig?, with networkManager: NetworkManagerProvider = NetworkManager.shared, dataCallback: @escaping (Self) -> Void) {
-        networkManager.enqueue(Self.requestTask(given: parameters, delegate: delegate, dataCallback: dataCallback))
+        request(given: parameters, delegate: delegate, with: networkManager, dataCallback: dataCallback)
     }
 
+    @inlinable static func request(given parameters: P, delegate: RequestDelegateConfig?, with networkManager: NetworkManagerProvider = NetworkManager.shared, dataCallback: @escaping (Self) -> Void) {
+        networkManager.enqueue(Self.requestTask(given: parameters, delegate: delegate, dataCallback: dataCallback))
+    }
+}
+
+// MARK: - Async / Await
+
+public extension Requestable {
+    @available(*, deprecated, renamed: "request(given:with:)")
     static func fetch(given parameters: P, with networkManager: NetworkManagerProvider = NetworkManager.shared) async throws -> Self {
+        try await request(given: parameters, with: networkManager)
+    }
+
+    static func request(given parameters: P, with networkManager: NetworkManagerProvider = NetworkManager.shared) async throws -> Self {
         try await withCheckedThrowingContinuation { continuation in
             networkManager.enqueue(
                 Self.requestTask(given: parameters) { [continuation] result in
@@ -112,7 +129,11 @@ public extension Requestable {
             )
         }
     }
+}
 
+// MARK: - RequestTask Builders
+
+public extension Requestable {
     /// Create a URLSessionNetworkTask for a request response.
     /// - Parameter parameters: The parameters for the network response.
     /// - Returns: A URL session task. (QueueableTask)
@@ -176,12 +197,22 @@ public extension Requestable where P == NoParameters {
         requestTask(given: .none, delegate: delegate, dataCallback: dataCallback)
     }
 
+    @available(*, deprecated, renamed: "request(delegate:with:dataCallback:)")
     @inlinable static func fetch(delegate: RequestDelegateConfig?, with networkManager: NetworkManagerProvider = NetworkManager.shared, dataCallback: @escaping (Self) -> Void) {
-        fetch(given: .none, delegate: delegate, with: networkManager, dataCallback: dataCallback)
+        request(delegate: delegate, with: networkManager, dataCallback: dataCallback)
     }
 
+    @inlinable static func request(delegate: RequestDelegateConfig?, with networkManager: NetworkManagerProvider = NetworkManager.shared, dataCallback: @escaping (Self) -> Void) {
+        request(given: .none, delegate: delegate, with: networkManager, dataCallback: dataCallback)
+    }
+
+    @available(*, deprecated, renamed: "request(with:)")
     @inlinable static func fetch(with networkManager: NetworkManagerProvider = NetworkManager.shared) async throws -> Self {
         try await fetch(given: .none, with: networkManager)
+    }
+
+    @inlinable static func request(with networkManager: NetworkManagerProvider = NetworkManager.shared) async throws -> Self {
+        try await request(given: .none, with: networkManager)
     }
 }
 
@@ -194,12 +225,22 @@ public extension Requestable where P: EmptyInitializable {
         requestTask(given: .init(), delegate: delegate, dataCallback: dataCallback)
     }
 
+    @available(*, deprecated, renamed: "request(delegate:with:dataCallback:)")
     @inlinable static func fetch(delegate: RequestDelegateConfig?, with networkManager: NetworkManagerProvider = NetworkManager.shared, dataCallback: @escaping (Self) -> Void) {
-        fetch(given: .init(), delegate: delegate, with: networkManager, dataCallback: dataCallback)
+        request(delegate: delegate, with: networkManager, dataCallback: dataCallback)
     }
 
+    @inlinable static func request(delegate: RequestDelegateConfig?, with networkManager: NetworkManagerProvider = NetworkManager.shared, dataCallback: @escaping (Self) -> Void) {
+        request(given: .init(), delegate: delegate, with: networkManager, dataCallback: dataCallback)
+    }
+
+    @available(*, deprecated, renamed: "request(with:)")
     @inlinable static func fetch(with networkManager: NetworkManagerProvider = NetworkManager.shared) async throws -> Self {
-        try await fetch(given: .init(), with: networkManager)
+        try await request(with: networkManager)
+    }
+
+    @inlinable static func request(with networkManager: NetworkManagerProvider = NetworkManager.shared) async throws -> Self {
+        try await request(given: .init(), with: networkManager)
     }
 }
 
