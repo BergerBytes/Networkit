@@ -36,11 +36,21 @@ public extension Cacheable {
 public typealias CacheableResponse = Requestable & Cacheable
 
 public extension Cacheable where Self: Requestable {
+    @available(*, deprecated, renamed: "request(given:delegate:force:with:)")
     @inlinable static func fetch(given parameters: P, delegate: RequestDelegateConfig? = nil, force: Bool = false, with networkManager: NetworkManagerProvider = NetworkManager.shared) {
-        fetch(given: parameters, delegate: delegate, force: force, with: networkManager, dataCallback: nil)
+        request(given: parameters, delegate: delegate, force: force, with: networkManager)
     }
 
+    @inlinable static func request(given parameters: P, delegate: RequestDelegateConfig? = nil, force: Bool = false, with networkManager: NetworkManagerProvider = NetworkManager.shared) {
+        request(given: parameters, delegate: delegate, force: force, with: networkManager, dataCallback: nil)
+    }
+
+    @available(*, deprecated, renamed: "request(given:delegate:force:with:dataCallback:)")
     static func fetch(given parameters: P, delegate: RequestDelegateConfig?, force: Bool = false, with networkManager: NetworkManagerProvider = NetworkManager.shared, dataCallback: ((Self) -> Void)?) {
+        request(given: parameters, delegate: delegate, force: force, with: networkManager, dataCallback: dataCallback)
+    }
+
+    static func request(given parameters: P, delegate: RequestDelegateConfig?, force: Bool = false, with networkManager: NetworkManagerProvider = NetworkManager.shared, dataCallback: ((Self) -> Void)?) {
         let requestTask = Self.requestTask(given: parameters, delegate: delegate, dataCallback: dataCallback)
 
         let isExpired = force ? true : (try? networkManager.isObjectExpired(for: requestTask.id)) ?? true
@@ -143,11 +153,21 @@ public extension Cacheable where Self: Requestable, Self.P: EmptyInitializable {
         return observe(on: object, given: .init(), token: &token, delegate: delegate, dataCallback: dataCallback)
     }
 
+    @available(*, deprecated, renamed: "request(delegate:with:force:)")
     @inlinable static func fetch(delegate: RequestDelegateConfig?, with networkManager: NetworkManagerProvider = NetworkManager.shared, force: Bool = false) {
-        fetch(delegate: delegate, with: networkManager, force: force, dataCallback: nil)
+        request(delegate: delegate, with: networkManager, force: force)
     }
 
+    @inlinable static func request(delegate: RequestDelegateConfig?, with networkManager: NetworkManagerProvider = NetworkManager.shared, force: Bool = false) {
+        request(delegate: delegate, with: networkManager, force: force, dataCallback: nil)
+    }
+
+    @available(*, deprecated, renamed: "request(delegate:with:force:dataCallback:)")
     static func fetch(delegate: RequestDelegateConfig?, with networkManager: NetworkManagerProvider = NetworkManager.shared, force: Bool = false, dataCallback: ((Self) -> Void)?) {
+        request(delegate: delegate, with: networkManager, force: force, dataCallback: dataCallback)
+    }
+
+    static func request(delegate: RequestDelegateConfig?, with networkManager: NetworkManagerProvider = NetworkManager.shared, force: Bool = false, dataCallback: ((Self) -> Void)?) {
         let requestTask = Self.requestTask(given: .init(), delegate: delegate, dataCallback: dataCallback)
 
         let isExpired = (try? networkManager.isObjectExpired(for: requestTask.id)) ?? true
@@ -172,11 +192,21 @@ public extension Cacheable where Self: Requestable, Self.P == NoParameters {
         return observe(on: object, given: .none, token: &token, delegate: delegate, dataCallback: dataCallback)
     }
 
+    @available(*, deprecated, renamed: "request(delegate:with:force:)")
     @inlinable static func fetch(delegate: RequestDelegateConfig?, with networkManager: NetworkManagerProvider = NetworkManager.shared, force: Bool = false) {
-        fetch(delegate: delegate, with: networkManager, force: force, dataCallback: nil)
+        request(delegate: delegate, with: networkManager, force: force)
     }
 
+    @inlinable static func request(delegate: RequestDelegateConfig?, with networkManager: NetworkManagerProvider = NetworkManager.shared, force: Bool = false) {
+        request(delegate: delegate, with: networkManager, force: force, dataCallback: nil)
+    }
+
+    @available(*, deprecated, renamed: "request(delegate:with:force:dataCallback:)")
     static func fetch(delegate: RequestDelegateConfig?, with networkManager: NetworkManagerProvider = NetworkManager.shared, force: Bool = false, dataCallback: ((Self) -> Void)?) {
+        request(delegate: delegate, with: networkManager, force: force, dataCallback: dataCallback)
+    }
+
+    static func request(delegate: RequestDelegateConfig?, with networkManager: NetworkManagerProvider = NetworkManager.shared, force: Bool = false, dataCallback: ((Self) -> Void)?) {
         let requestTask = Self.requestTask(given: .none, delegate: delegate, dataCallback: dataCallback)
 
         let isExpired = (try? networkManager.isObjectExpired(for: requestTask.id)) ?? true
