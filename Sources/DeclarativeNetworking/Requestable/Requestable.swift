@@ -104,6 +104,10 @@ public extension Requestable {
     @inlinable static func request(given parameters: P, delegate: RequestDelegateConfig?, with networkManager: NetworkManagerProvider = NetworkManager.shared, dataCallback: @escaping (Self) -> Void) {
         networkManager.enqueue(Self.requestTask(given: parameters, delegate: delegate, dataCallback: dataCallback))
     }
+    
+    @inlinable static func request(given parameters: P, with networkManager: NetworkManagerProvider = NetworkManager.shared, response: @escaping (Result<Self, Error>) -> Void) {
+        networkManager.enqueue(Self.requestTask(given: parameters, delegate: nil, dataCallback: nil, resultCallback: response))
+    }
 }
 
 // MARK: - Async / Await
@@ -157,7 +161,7 @@ public extension Requestable {
             resultCallback: resultCallback
         )
     }
-
+    
     static func generateId(given parameters: P) -> String {
         let urlString = url(given: parameters).absoluteString
         guard
