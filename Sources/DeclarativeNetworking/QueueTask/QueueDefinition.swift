@@ -18,6 +18,7 @@ public struct QueueDefinition: Hashable {
     public enum ConcurrentTaskPolicy: Hashable {
         /// The operation queue determines this number dynamically based on current system conditions.
         case `default`
+        case serial
         case noLimit
         case limit(Int)
 
@@ -31,6 +32,9 @@ public struct QueueDefinition: Hashable {
 
             case .noLimit:
                 return .max
+                
+            case .serial:
+                return 1
             }
         }
     }
