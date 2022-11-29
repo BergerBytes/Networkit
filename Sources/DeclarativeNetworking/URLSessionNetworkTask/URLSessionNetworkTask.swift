@@ -180,8 +180,8 @@ public class URLSessionNetworkTask<R: Requestable>: QueueableTask {
 
             resultCallbacks.forEach { $0(.success(response)) }
 
-            self.delegate |> { $0.requestCompleted(id: self.requestIdentifier) }
             self.dataCallbacks.forEach { $0(response) }
+            self.delegate |> { $0.requestCompleted(id: self.requestIdentifier) }
         }
     }
 
