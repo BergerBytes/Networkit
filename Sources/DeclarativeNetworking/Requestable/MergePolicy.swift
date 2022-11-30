@@ -14,33 +14,21 @@
 
 import Foundation
 
+/// The merge policy for requests made from Requestable.
+///
+/// This policy dictates if a request should attempt to "merge" with an in progress Identical request rather than make a new request.
 public enum MergePolicy {
-    /// The default merge policy based on RequestMethod.
-    ///
-    /// Mergable: get, head, options
-    ///
-    /// Not mergable: post, delete, put, patch, trace, connect
-    case `default`
-    case never
     case always
+    case never
     case custom((any Requestable.Type) -> Bool)
 
     internal func shouldAttemptMerge(request: any Requestable.Type) -> Bool {
         switch self {
-        case .default:
-            switch request.method {
-            case .get, .head, .options:
-                return true
-                
-            case .post, .delete, .put, .patch, .trace, .connect:
-                return false
-            }
-
-        case .never:
-            return false
-
         case .always:
             return true
+            
+        case .never:
+            return false
             
         case let .custom(closure):
             return closure(request)

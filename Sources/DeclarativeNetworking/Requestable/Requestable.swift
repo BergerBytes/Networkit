@@ -78,7 +78,6 @@ public extension Requestable {
     static var port: Int? { nil }
     static var decoder: ResponseDecoder { JSONDecoder() }
     static var queue: QueuePolicy { .single(queue: .networkDefault) }
-    static var mergePolicy: MergePolicy { .default }
     static func headers(given _: P) -> [String: String]? { nil }
 
     static func url(given parameters: P) -> URL {
