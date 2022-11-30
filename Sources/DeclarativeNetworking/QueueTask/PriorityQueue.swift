@@ -22,12 +22,12 @@ import Foundation
 final class PriorityQueue<Element: TaskOperation> {
     private var array = [Element?]()
     private var head = 0
-    
+
     var isEmpty: Bool { count == 0 }
     var count: Int { array.count - head }
-    
+
     init() { }
-    
+
     init(_ sequence: [Element]) {
         array = sequence
     }

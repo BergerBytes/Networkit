@@ -32,7 +32,7 @@ public struct QueueDefinition: Hashable {
 
             case .noLimit:
                 return .max
-                
+
             case .serial:
                 return 1
             }

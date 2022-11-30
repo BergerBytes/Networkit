@@ -29,6 +29,7 @@ public class URLSessionNetworkTask<R: Requestable>: QueueableTask {
     private let parameters: R.P
     private let headers: [String: String]?
     private let cachePolicy: CachePolicy?
+    private let mergePolicy: MergePolicy
     public var dataCallbacks = [(R) -> Void]()
     public let delegate = MulticastDelegate<RequestDelegate>()
     public let requestIdentifier: RequestIdentifier?
@@ -42,6 +43,7 @@ public class URLSessionNetworkTask<R: Requestable>: QueueableTask {
         parameters: R.P,
         headers: [String: String]?,
         cachePolicy: CachePolicy?,
+        mergePolicy: MergePolicy,
         dataCallback: ((R) -> Void)?,
         delegate: RequestDelegateConfig?,
         resultCallback: ((Result<R, Error>) -> Void)? = nil,
@@ -54,7 +56,8 @@ public class URLSessionNetworkTask<R: Requestable>: QueueableTask {
         self.parameters = parameters
         self.headers = headers
         self.cachePolicy = cachePolicy
-        if let dataCallback = dataCallback {
+        self.mergePolicy = mergePolicy
+        if let dataCallback {
             dataCallbacks.append(dataCallback)
         }
         self.delegate += delegate?.delegate
@@ -198,7 +201,13 @@ public class URLSessionNetworkTask<R: Requestable>: QueueableTask {
 extension URLSessionNetworkTask: MergableTask {
     #if compiler(>=5.7)
         public func shouldBeMerged(with task: some MergableTask) -> Bool {
-            guard let task = task as? Self else { return false }
+            guard
+                R.mergePolicy.shouldAttemptMerge(request: R.self),
+                let task = task as? Self
+            else {
+                return false
+            }
+            
             return id == task.id
         }
 
@@ -211,7 +220,13 @@ extension URLSessionNetworkTask: MergableTask {
         }
     #else
         public func shouldBeMerged(with task: MergableTask) -> Bool {
-            guard let task = task as? Self else { return false }
+            guard
+                R.mergePolicy.shouldAttemptMerge(request: R.self),
+                let task = task as? Self
+            else {
+                return false
+            }
+            
             return id == task.id
         }
 

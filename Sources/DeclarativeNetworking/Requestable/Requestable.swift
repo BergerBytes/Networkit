@@ -24,6 +24,8 @@ public protocol Requestable: Decodable {
 
     static var queue: QueuePolicy { get }
 
+    static var mergePolicy: MergePolicy { get }
+
     static var method: RequestMethod { get }
 
     /// The scheme subcomponent of the URL. Defaults to "https"
@@ -76,6 +78,7 @@ public extension Requestable {
     static var port: Int? { nil }
     static var decoder: ResponseDecoder { JSONDecoder() }
     static var queue: QueuePolicy { .single(queue: .networkDefault) }
+    static var mergePolicy: MergePolicy { .default }
     static func headers(given _: P) -> [String: String]? { nil }
 
     static func url(given parameters: P) -> URL {
@@ -104,7 +107,7 @@ public extension Requestable {
     @inlinable static func request(given parameters: P, delegate: RequestDelegateConfig?, with networkManager: NetworkManagerProvider = NetworkManager.shared, dataCallback: @escaping (Self) -> Void) {
         networkManager.enqueue(Self.requestTask(given: parameters, delegate: delegate, dataCallback: dataCallback))
     }
-    
+
     @inlinable static func request(given parameters: P, with networkManager: NetworkManagerProvider = NetworkManager.shared, response: @escaping (Result<Self, Error>) -> Void) {
         networkManager.enqueue(Self.requestTask(given: parameters, delegate: nil, dataCallback: nil, resultCallback: response))
     }
@@ -156,12 +159,13 @@ public extension Requestable {
             parameters: parameters,
             headers: headers(given: parameters),
             cachePolicy: (Self.self as? Cacheable.Type)?.cachePolicy,
+            mergePolicy: mergePolicy,
             dataCallback: dataCallback,
             delegate: delegate,
             resultCallback: resultCallback
         )
     }
-    
+
     static func generateId(given parameters: P) -> String {
         let urlString = url(given: parameters).absoluteString
         guard
