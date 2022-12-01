@@ -20,7 +20,7 @@ import Foundation
 public enum MergePolicy {
     case always
     case never
-    case custom((any Requestable.Type) -> Bool)
+    case custom(closure: (any Requestable.Type) -> Bool)
 
     internal func shouldAttemptMerge(request: any Requestable.Type) -> Bool {
         switch self {

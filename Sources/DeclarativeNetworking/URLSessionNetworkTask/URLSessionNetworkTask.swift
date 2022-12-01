@@ -57,7 +57,7 @@ public class URLSessionNetworkTask<R: Requestable>: QueueableTask {
         self.headers = headers
         self.cachePolicy = cachePolicy
         self.mergePolicy = mergePolicy
-        if let dataCallback {
+        if let dataCallback = dataCallback {
             dataCallbacks.append(dataCallback)
         }
         self.delegate += delegate?.delegate
