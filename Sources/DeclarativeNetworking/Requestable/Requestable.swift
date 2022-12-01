@@ -19,6 +19,7 @@ import Foundation
 
 public protocol Requestable: Decodable {
     associatedtype P: NetworkParameters
+    typealias MergePolicy = RequestableMergePolicy<P>
 
     static var decoder: ResponseDecoder { get }
 
@@ -152,7 +153,7 @@ public extension Requestable {
     }
 
     static func requestTask(given parameters: P, delegate: RequestDelegateConfig?, dataCallback: ((Self) -> Void)?, resultCallback: ((Result<Self, Error>) -> Void)?) -> QueueableTask {
-        URLSessionNetworkTask(
+        URLSessionNetworkTask<Self>(
             method: method,
             url: url(given: parameters),
             parameters: parameters,

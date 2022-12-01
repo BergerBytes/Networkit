@@ -17,12 +17,14 @@ import Foundation
 /// The merge policy for requests made from Requestable.
 ///
 /// This policy dictates if a request should attempt to "merge" with an in progress Identical request rather than make a new request.
-public enum MergePolicy {
+public enum RequestableMergePolicy<Parameters: NetworkParameters> {
     case always
     case never
-    case custom(closure: (any Requestable.Type) -> Bool)
-
-    internal func shouldAttemptMerge(request: any Requestable.Type) -> Bool {
+#if compiler(>=5.7)
+    case custom(closure: (Parameters) -> Bool)
+#endif
+    
+    internal func shouldAttemptMerge(given parameters: Parameters) -> Bool {
         switch self {
         case .always:
             return true
@@ -30,8 +32,10 @@ public enum MergePolicy {
         case .never:
             return false
             
+#if compiler(>=5.7)
         case let .custom(closure):
-            return closure(request)
+            return closure(parameters)
+#endif
         }
     }
 }

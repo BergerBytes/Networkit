@@ -29,7 +29,7 @@ public class URLSessionNetworkTask<R: Requestable>: QueueableTask {
     private let parameters: R.P
     private let headers: [String: String]?
     private let cachePolicy: CachePolicy?
-    private let mergePolicy: MergePolicy
+    private let mergePolicy: R.MergePolicy
     public var dataCallbacks = [(R) -> Void]()
     public let delegate = MulticastDelegate<RequestDelegate>()
     public let requestIdentifier: RequestIdentifier?
@@ -43,7 +43,7 @@ public class URLSessionNetworkTask<R: Requestable>: QueueableTask {
         parameters: R.P,
         headers: [String: String]?,
         cachePolicy: CachePolicy?,
-        mergePolicy: MergePolicy,
+        mergePolicy: R.MergePolicy,
         dataCallback: ((R) -> Void)?,
         delegate: RequestDelegateConfig?,
         resultCallback: ((Result<R, Error>) -> Void)? = nil,
@@ -202,7 +202,7 @@ extension URLSessionNetworkTask: MergableTask {
     #if compiler(>=5.7)
         public func shouldBeMerged(with task: some MergableTask) -> Bool {
             guard
-                R.mergePolicy.shouldAttemptMerge(request: R.self),
+                R.mergePolicy.shouldAttemptMerge(given: parameters),
                 let task = task as? Self
             else {
                 return false
