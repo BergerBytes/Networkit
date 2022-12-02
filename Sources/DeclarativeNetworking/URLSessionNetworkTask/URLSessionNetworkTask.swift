@@ -221,7 +221,7 @@ extension URLSessionNetworkTask: MergableTask {
     #else
         public func shouldBeMerged(with task: MergableTask) -> Bool {
             guard
-                R.mergePolicy.shouldAttemptMerge(request: R.self),
+                R.mergePolicy.shouldAttemptMerge(given: parameters),
                 let task = task as? Self
             else {
                 return false
