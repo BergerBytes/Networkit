@@ -19,6 +19,8 @@ import Foundation
 
 public protocol Requestable: Decodable {
     associatedtype P: NetworkParameters
+    
+    typealias Method = RequestMethod
     typealias MergePolicy = RequestableMergePolicy<P>
 
     static var decoder: ResponseDecoder { get }
@@ -27,7 +29,7 @@ public protocol Requestable: Decodable {
 
     static var mergePolicy: MergePolicy { get }
 
-    static var method: RequestMethod { get }
+    static var method: Method { get }
 
     /// The scheme subcomponent of the URL. Defaults to "https"
     ///
@@ -203,6 +205,10 @@ public extension Requestable where P == NoParameters {
     /// - Returns: The URL session task. (QueueableTask)
     @inlinable static func requestTask(delegate: RequestDelegateConfig?, dataCallback: @escaping (_ data: Self) -> Void) -> QueueableTask {
         requestTask(given: .none, delegate: delegate, dataCallback: dataCallback)
+    }
+    
+    @inlinable static func requestTask(callback: @escaping (Result<Self, Error>) -> Void) -> QueueableTask {
+        requestTask(given: .none, delegate: nil, dataCallback: nil, resultCallback: callback)
     }
 
     @available(*, deprecated, renamed: "request(delegate:with:dataCallback:)")
