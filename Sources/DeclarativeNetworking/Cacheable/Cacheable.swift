@@ -44,6 +44,14 @@ public extension Cacheable where Self: Requestable {
     @inlinable static func request(given parameters: P, delegate: RequestDelegateConfig? = nil, force: Bool = false, with networkManager: NetworkManagerProvider = NetworkManager.shared) {
         _request(given: parameters, delegate: delegate, force: force, with: networkManager, dataCallback: nil, resultCallback: nil)
     }
+    
+    @inlinable static func request(given parameters: P, delegate: RequestDelegateConfig, force: Bool = false, with networkManager: NetworkManagerProvider = NetworkManager.shared, callback: @escaping (Self) -> ()) {
+        _request(given: parameters, delegate: delegate, force: force, with: networkManager, dataCallback: callback, resultCallback: nil)
+    }
+    
+    @inlinable static func request(given parameters: P, force: Bool = false, with networkManager: NetworkManagerProvider = NetworkManager.shared, callback: @escaping (Result<Self, Error>) -> ()) {
+        _request(given: parameters, delegate: nil, force: force, with: networkManager, dataCallback: nil, resultCallback: callback)
+    }
 
     @available(*, deprecated, renamed: "request(given:delegate:force:with:dataCallback:)")
     static func fetch(given parameters: P, delegate: RequestDelegateConfig?, force: Bool = false, with networkManager: NetworkManagerProvider = NetworkManager.shared, dataCallback: ((Self) -> Void)?) {
