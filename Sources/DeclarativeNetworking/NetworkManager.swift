@@ -13,7 +13,7 @@
 //  IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 import Cache
-import Debug
+import DevKit
 import Foundation
 
 struct ObserverEntry {

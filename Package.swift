@@ -18,9 +18,9 @@ let package = Package(
     ],
     dependencies: [
         .package(
-            name: "Debug",
-            url: "https://github.com/BergerBytes/swift-debug.git",
-            "1.5.0" ..< "1.6.0"
+            name: "DevKit",
+            url: "https://github.com/BergerBytes/devkit.git",
+            "1.6.0" ..< "1.7.0"
         ),
         .package(
             url: "https://github.com/BergerBytes/Cache",
@@ -36,7 +36,7 @@ let package = Package(
         // Targets can depend on other targets in this package, and on products in packages this package depends on.
         .target(
             name: "DeclarativeNetworking",
-            dependencies: ["Debug", "Cache"]
+            dependencies: ["DevKit", "Cache"]
         ),
         .testTarget(
             name: "DeclarativeNetworkingTests",

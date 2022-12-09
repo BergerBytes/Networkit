@@ -11,12 +11,12 @@
         }
       },
       {
-        "package": "Debug",
-        "repositoryURL": "https://github.com/BergerBytes/swift-debug.git",
+        "package": "DevKit",
+        "repositoryURL": "https://github.com/BergerBytes/devkit.git",
         "state": {
           "branch": null,
-          "revision": "5065727272d88311c5ce3812b39a3b42fabe9966",
-          "version": "1.5.4"
+          "revision": "fef3bcf9e638853da7ecf73859634e3db925bf46",
+          "version": "1.6.0"
         }
       }
     ]
