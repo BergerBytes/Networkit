@@ -57,13 +57,13 @@ public class URLSessionNetworkTask<R: Requestable>: QueueableTask {
         self.headers = headers
         self.cachePolicy = cachePolicy
         self.mergePolicy = mergePolicy
-        if let dataCallback = dataCallback {
+        if let dataCallback {
             dataCallbacks.append(dataCallback)
         }
         self.delegate += delegate?.delegate
         requestIdentifier = delegate?.id
 
-        if let resultCallback = resultCallback {
+        if let resultCallback {
             resultCallbacks.append(resultCallback)
         }
         self.networkManager = networkManager
@@ -131,13 +131,13 @@ public class URLSessionNetworkTask<R: Requestable>: QueueableTask {
             } else {
                 let task = urlSession.dataTask(with: urlRequest) { data, response, error in
                     do {
-                        if let error = error {
+                        if let error {
                             self.failed(error: error)
                             return
                         }
 
                         guard
-                            let response = response
+                            let response
                         else {
                             self.failed(error: Errors.noResponse)
                             return
@@ -148,7 +148,7 @@ public class URLSessionNetworkTask<R: Requestable>: QueueableTask {
                             return
                         }
 
-                        guard let data = data else {
+                        guard let data else {
                             self.failed(error: Errors.noResponse)
                             return
                         }
@@ -173,7 +173,7 @@ public class URLSessionNetworkTask<R: Requestable>: QueueableTask {
 
     open func complete(response: R, data: Data) {
         DispatchQueue.main.sync {
-            if let cachePolicy = cachePolicy {
+            if let cachePolicy {
                 do {
                     try networkManager.save(object: data, key: id, cachePolicy: cachePolicy)
                 } catch {
@@ -207,7 +207,7 @@ extension URLSessionNetworkTask: MergableTask {
             else {
                 return false
             }
-            
+
             return id == task.id
         }
 
@@ -226,7 +226,7 @@ extension URLSessionNetworkTask: MergableTask {
             else {
                 return false
             }
-            
+
             return id == task.id
         }
 

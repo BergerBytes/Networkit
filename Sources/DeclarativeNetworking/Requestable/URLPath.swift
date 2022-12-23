@@ -36,7 +36,7 @@ public func / <Convertible: EndpointPathStringConvertible>(left: Convertible, ri
     .init(left.pathString).add(right.pathString)
 }
 
-public func / <Convertible: EndpointPathStringConvertible>(left: URLPath, right: Convertible) -> URLPath {
+public func / (left: URLPath, right: some EndpointPathStringConvertible) -> URLPath {
     left.add(right.pathString)
 }
 

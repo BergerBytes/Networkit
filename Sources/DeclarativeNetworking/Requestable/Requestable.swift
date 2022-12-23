@@ -19,7 +19,7 @@ import Foundation
 
 public protocol Requestable: Decodable {
     associatedtype P: NetworkParameters
-    
+
     typealias Method = RequestMethod
     typealias MergePolicy = RequestableMergePolicy<P>
 
@@ -206,7 +206,7 @@ public extension Requestable where P == NoParameters {
     @inlinable static func requestTask(delegate: RequestDelegateConfig?, dataCallback: @escaping (_ data: Self) -> Void) -> QueueableTask {
         requestTask(given: .none, delegate: delegate, dataCallback: dataCallback)
     }
-    
+
     @inlinable static func requestTask(callback: @escaping (Result<Self, Error>) -> Void) -> QueueableTask {
         requestTask(given: .none, delegate: nil, dataCallback: nil, resultCallback: callback)
     }

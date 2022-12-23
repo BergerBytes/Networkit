@@ -26,7 +26,7 @@ public class QueueManager {
         queues.forEach { $0.value.set(priority: priority, for: id) }
     }
 
-    public func enqueue<Task: QueueableTask>(task: Task) {
+    public func enqueue(task: some QueueableTask) {
         defer { lock.unlock() }
         lock.lock()
 

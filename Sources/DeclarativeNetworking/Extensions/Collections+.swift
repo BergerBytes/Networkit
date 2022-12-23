@@ -21,7 +21,7 @@ internal extension Array {
     /// - Returns: an element if the index is within bounds of the array; otherwise, nil.
     subscript(safe index: Index?) -> Element? {
         guard
-            let index = index,
+            let index,
             indices.contains(index)
         else {
             return nil

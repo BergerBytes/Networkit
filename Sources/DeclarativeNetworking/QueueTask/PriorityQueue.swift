@@ -57,8 +57,8 @@ extension PriorityQueue {
 
     private func sort() {
         array = array.sorted(by: { lhs, rhs in
-            guard let lhs = lhs else { return true }
-            guard let rhs = rhs else { return false }
+            guard let lhs else { return true }
+            guard let rhs else { return false }
 
             return lhs > rhs
         })

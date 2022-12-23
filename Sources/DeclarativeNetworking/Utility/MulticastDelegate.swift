@@ -57,7 +57,7 @@ public final class MulticastDelegate<T> {
         lock.lock()
 
         guard
-            let delegate = delegate,
+            let delegate,
             unsafeContainsDelegate(delegate) == false
         else {
             return
@@ -139,7 +139,7 @@ public func += <T>(left: MulticastDelegate<T>, right: MulticastDelegate<T>) {
 /// - parameter left: The multicast delegate
 /// - parameter right: The delegate to be removed
 public func -= <T>(left: MulticastDelegate<T>, right: T?) {
-    if let right = right {
+    if let right {
         left.removeDelegate(right)
     }
 }

@@ -61,7 +61,7 @@ class TaskQueue {
 
             let operation = task.newOperation()
             operation.completionBlock = { [weak self] in
-                guard let self = self else { return }
+                guard let self else { return }
                 self.internalThread.async {
                     self.operationCount -= 1
                     while

@@ -20,22 +20,22 @@ import Foundation
 public enum RequestableMergePolicy<Parameters: NetworkParameters> {
     case always
     case never
-#if compiler(>=5.7)
-    case custom(closure: (Parameters) -> Bool)
-#endif
-    
-    internal func shouldAttemptMerge(given parameters: Parameters) -> Bool {
+    #if compiler(>=5.7)
+        case custom(closure: (Parameters) -> Bool)
+    #endif
+
+    internal func shouldAttemptMerge(given _: Parameters) -> Bool {
         switch self {
         case .always:
             return true
-            
+
         case .never:
             return false
-            
-#if compiler(>=5.7)
-        case let .custom(closure):
-            return closure(parameters)
-#endif
+
+        #if compiler(>=5.7)
+            case let .custom(closure):
+                return closure(parameters)
+        #endif
         }
     }
 }
