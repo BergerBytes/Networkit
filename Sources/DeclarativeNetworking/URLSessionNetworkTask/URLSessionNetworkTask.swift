@@ -93,9 +93,11 @@ public class URLSessionNetworkTask<R: Requestable>: QueueableTask {
             return
         }
 
-        urlComponents.queryItems = parameters.asQuery()?.compactMap { key, value in
-            URLQueryItem(name: key, value: "\(value)")
-        }
+        urlComponents.queryItems = parameters.asQuery()?
+            .compactMap { key, value in
+                URLQueryItem(name: key, value: "\(value)")
+            }
+            .sorted(by: { $0.name > $1.name })
 
         guard
             let url = urlComponents.url
