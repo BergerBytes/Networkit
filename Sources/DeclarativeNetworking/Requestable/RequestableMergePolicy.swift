@@ -1,4 +1,4 @@
-//  Copyright © 2022 BergerBytes LLC. All rights reserved.
+//  Copyright © 2023 BergerBytes LLC. All rights reserved.
 //
 //  Permission to use, copy, modify, and/or distribute this software for any
 //  purpose with or without fee is hereby granted, provided that the above
@@ -20,11 +20,9 @@ import Foundation
 public enum RequestableMergePolicy<Parameters: NetworkParameters> {
     case always
     case never
-    #if compiler(>=5.7)
-        case custom(closure: (Parameters) -> Bool)
-    #endif
+    case custom(closure: (Parameters) -> Bool)
 
-    internal func shouldAttemptMerge(given _: Parameters) -> Bool {
+    internal func shouldAttemptMerge(given parameters: Parameters) -> Bool {
         switch self {
         case .always:
             return true
@@ -32,10 +30,8 @@ public enum RequestableMergePolicy<Parameters: NetworkParameters> {
         case .never:
             return false
 
-        #if compiler(>=5.7)
-            case let .custom(closure):
-                return closure(parameters)
-        #endif
+        case let .custom(closure):
+            return closure(parameters)
         }
     }
 }
