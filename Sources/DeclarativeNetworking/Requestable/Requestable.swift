@@ -167,8 +167,12 @@ public extension Requestable {
             resultCallback: resultCallback
         )
     }
-
+    
     static func generateId(given parameters: P) -> String {
+        generateDefaultId(given: parameters)
+    }
+
+    static func generateDefaultId(given parameters: P) -> String {
         let urlString = url(given: parameters).absoluteString
         guard
             let encodedParameters = try? JSONEncoder().encode(parameters),
