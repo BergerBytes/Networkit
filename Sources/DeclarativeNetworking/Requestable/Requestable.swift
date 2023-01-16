@@ -19,7 +19,7 @@ import Foundation
 
 public protocol Requestable: Decodable {
     associatedtype P: NetworkParameters
-    
+
     typealias Method = RequestMethod
     typealias MergePolicy = RequestableMergePolicy<P>
 
@@ -63,11 +63,14 @@ public protocol Requestable: Decodable {
     static func handle(response: URLResponse, data: Data?) -> Error?
     static func generateId(given parameters: P) -> String
 
+    /// Additional hash data to use in generating unique Id.
+    static func additionalHashData(given parameters: P) -> String
+
     static func requestTask(given parameters: P, delegate: RequestDelegateConfig?, dataCallback: ((Self) -> Void)?, resultCallback: ((Result<Self, Error>) -> Void)?) -> QueueableTask
 
     /// The URL for the request.
     ///
-    /// The URL is automatically generated based on the ``scheme-1bbpn``, ``host``, ``port-5i9re`` and ``path(given:)``.
+    /// The URL is automatically generated based on the ``scheme``, ``host``, ``port`` and ``path(given:)``.
     /// Implementing this method requires building a complete url, excluding query params, to make the request against.
     /// - Parameter parameters: The parameters for defined for this request.
     /// - Returns: The url to make the request to.
@@ -154,7 +157,7 @@ public extension Requestable {
         requestTask(given: parameters, delegate: nil, dataCallback: nil, resultCallback: callback)
     }
 
-    static func requestTask(given parameters: P, delegate: RequestDelegateConfig?, dataCallback: ((Self) -> Void)?, resultCallback: ((Result<Self, Error>) -> Void)?) -> QueueableTask {
+    @inlinable static func requestTask(given parameters: P, delegate: RequestDelegateConfig?, dataCallback: ((Self) -> Void)?, resultCallback: ((Result<Self, Error>) -> Void)?) -> QueueableTask {
         URLSessionNetworkTask<Self>(
             method: method,
             url: url(given: parameters),
@@ -167,16 +170,23 @@ public extension Requestable {
             resultCallback: resultCallback
         )
     }
-    
-    static func generateId(given parameters: P) -> String {
+
+    @inlinable static func additionalHashData(given _: P) -> String { "" }
+
+    @inlinable static func generateId(given parameters: P) -> String {
         generateDefaultId(given: parameters)
     }
 
-    static func generateDefaultId(given parameters: P) -> String {
+    @inlinable static func generateDefaultId(given parameters: P) -> String {
         let urlString = url(given: parameters).absoluteString
         guard
             let encodedParameters = try? JSONEncoder().encode(parameters),
-            let hash = try? SHA256.hash(data: JSONEncoder().encode([method.rawValue, urlString, String(decoding: encodedParameters, as: UTF8.self)]))
+            let hash = try? SHA256.hash(data: JSONEncoder().encode([
+                method.rawValue,
+                urlString,
+                String(decoding: encodedParameters, as: UTF8.self),
+                additionalHashData(given: parameters),
+            ]))
         else {
             Log.error(
                 in: .network,
@@ -210,7 +220,7 @@ public extension Requestable where P == NoParameters {
     @inlinable static func requestTask(delegate: RequestDelegateConfig?, dataCallback: @escaping (_ data: Self) -> Void) -> QueueableTask {
         requestTask(given: .none, delegate: delegate, dataCallback: dataCallback)
     }
-    
+
     @inlinable static func requestTask(callback: @escaping (Result<Self, Error>) -> Void) -> QueueableTask {
         requestTask(given: .none, delegate: nil, dataCallback: nil, resultCallback: callback)
     }

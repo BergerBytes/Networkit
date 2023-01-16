@@ -15,5 +15,5 @@
 import DevKit
 
 extension DevKit.Log.Scope {
-    static let network = DevKit.Log.Scope("📡")
+    @usableFromInline static let network = DevKit.Log.Scope("📡")
 }
