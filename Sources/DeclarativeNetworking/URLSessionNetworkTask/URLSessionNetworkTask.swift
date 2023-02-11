@@ -158,7 +158,6 @@ public class URLSessionNetworkTask<R: Requestable>: QueueableTask {
                         let decodedData = try R.decoder.decode(R.self, from: data)
                         self.complete(response: decodedData, data: data)
                     } catch {
-                        Log.error(in: .network, error)
                         self.failed(error: error)
                     }
                 }
@@ -168,7 +167,6 @@ public class URLSessionNetworkTask<R: Requestable>: QueueableTask {
                 }
             }
         } catch {
-            Log.error(in: .network, error)
             failed(error: error)
         }
     }
@@ -191,6 +189,7 @@ public class URLSessionNetworkTask<R: Requestable>: QueueableTask {
     }
 
     open func failed(error: Error) {
+        Log.error(in: .network, error, params: ["id": requestIdentifier])
         DispatchQueue.main.sync {
             resultCallbacks.forEach { $0(.failure(error)) }
             self.delegate |> { $0.requestFailed(id: self.requestIdentifier, error: error) }

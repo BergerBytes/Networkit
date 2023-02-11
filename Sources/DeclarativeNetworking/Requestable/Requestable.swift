@@ -63,11 +63,14 @@ public protocol Requestable: Decodable {
     static func handle(response: URLResponse, data: Data?) -> Error?
     static func generateId(given parameters: P) -> String
 
+    /// Additional hash data to use in generating unique Id.
+    static func additionalHashData(given parameters: P) -> String?
+
     static func requestTask(given parameters: P, delegate: RequestDelegateConfig?, dataCallback: ((Self) -> Void)?, resultCallback: ((Result<Self, Error>) -> Void)?) -> QueueableTask
 
     /// The URL for the request.
     ///
-    /// The URL is automatically generated based on the ``scheme-1bbpn``, ``host``, ``port-5i9re`` and ``path(given:)``.
+    /// The URL is automatically generated based on the ``scheme``, ``host``, ``port`` and ``path(given:)``.
     /// Implementing this method requires building a complete url, excluding query params, to make the request against.
     /// - Parameter parameters: The parameters for defined for this request.
     /// - Returns: The url to make the request to.
@@ -154,7 +157,7 @@ public extension Requestable {
         requestTask(given: parameters, delegate: nil, dataCallback: nil, resultCallback: callback)
     }
 
-    static func requestTask(given parameters: P, delegate: RequestDelegateConfig?, dataCallback: ((Self) -> Void)?, resultCallback: ((Result<Self, Error>) -> Void)?) -> QueueableTask {
+    @inlinable static func requestTask(given parameters: P, delegate: RequestDelegateConfig?, dataCallback: ((Self) -> Void)?, resultCallback: ((Result<Self, Error>) -> Void)?) -> QueueableTask {
         URLSessionNetworkTask<Self>(
             method: method,
             url: url(given: parameters),
@@ -168,12 +171,29 @@ public extension Requestable {
         )
     }
 
-    static func generateId(given parameters: P) -> String {
+    @inlinable static func additionalHashData(given _: P) -> String? { nil }
+
+    @inlinable static func generateId(given parameters: P) -> String {
+        generateDefaultId(given: parameters)
+    }
+
+    @inlinable static func generateDefaultId(given parameters: P) -> String {
         let urlString = url(given: parameters).absoluteString
-        guard
-            let encodedParameters = try? JSONEncoder().encode(parameters),
-            let hash = try? SHA256.hash(data: JSONEncoder().encode([method.rawValue, urlString, String(decoding: encodedParameters, as: UTF8.self)]))
-        else {
+        
+        var data = [
+            method.rawValue,
+            urlString,
+            String(
+                decoding: (try? JSONEncoder().encode(parameters)) ?? Data(),
+                as: UTF8.self
+            ),
+        ]
+        
+        if let additionalHashData = additionalHashData(given: parameters) {
+            data.append(additionalHashData)
+        }
+        
+        guard let hash = try? SHA256.hash(data: JSONEncoder().encode(data)) else {
             Log.error(
                 in: .network,
                 "Failed to runtime agnostically hash a URLSessionNetworkTask id. Falling back to Hasher().",
@@ -189,6 +209,7 @@ public extension Requestable {
             hasher.combine(method)
             hasher.combine(urlString)
             hasher.combine(parameters)
+            hasher.combine(additionalHashData(given: parameters))
 
             return "\(urlString) | \(hasher.finalize())"
         }
