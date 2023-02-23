@@ -24,7 +24,7 @@ public enum RequestableMergePolicy<Parameters: NetworkParameters> {
     case custom(closure: (Parameters) -> Bool)
 #endif
     
-    internal func shouldAttemptMerge(given parameters: Parameters) -> Bool {
+    public func shouldAttemptMerge(given parameters: Parameters) -> Bool {
         switch self {
         case .always:
             return true
