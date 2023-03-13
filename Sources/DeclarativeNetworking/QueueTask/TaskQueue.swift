@@ -12,7 +12,7 @@
 //  ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR
 //  IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
-import Debug
+import DevKit
 import Foundation
 
 class TaskQueue {
@@ -54,7 +54,7 @@ class TaskQueue {
                 } catch {
                     Log.error(
                         "Failed to merge tasks, queuing new task.",
-                        params: ["New Task": mergable, "Existing Task": activeTask, "error": error]
+                        info: ["New Task": mergable, "Existing Task": activeTask, "error": error]
                     )
                 }
             }

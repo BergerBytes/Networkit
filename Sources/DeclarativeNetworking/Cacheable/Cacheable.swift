@@ -13,7 +13,7 @@
 //  IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 import Cache
-import Debug
+import DevKit
 import Foundation
 
 public protocol Cacheable {
@@ -84,7 +84,7 @@ public extension Cacheable where Self: Requestable {
                 guard
                     let value = try? Self.decoder.decode(Self.self, from: data)
                 else {
-                    Log.error(in: .network, "Type mismatch", params: ["Expected Type": Self.self])
+                    Log.error(in: .network, "Type mismatch", info: ["Expected Type": Self.self])
                     return
                 }
 

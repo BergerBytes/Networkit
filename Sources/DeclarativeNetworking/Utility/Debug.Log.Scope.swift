@@ -12,8 +12,8 @@
 //  ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR
 //  IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
-import Debug
+import DevKit
 
-extension Debug.Log.Scope {
-    static let network = Debug.Log.Scope("📡")
+extension Log.Scope {
+    static let network = Log.Scope("📡")
 }

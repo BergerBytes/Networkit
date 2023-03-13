@@ -13,7 +13,7 @@
 //  IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 import Cache
-import Debug
+import DevKit
 import Foundation
 
 struct ObserverEntry {
@@ -91,7 +91,7 @@ public class NetworkManager: NetworkManagerProvider {
                         }
 
                     case let .failure(error):
-                        Log.error(in: .network, "Failed to get item", params: ["Key": key, "Error": error.localizedDescription])
+                        Log.error(in: .network, "Failed to get item", info: ["Key": key, "Error": error.localizedDescription])
                     }
                 }
 

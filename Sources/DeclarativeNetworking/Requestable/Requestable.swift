@@ -14,7 +14,7 @@
 
 import Cache
 import CryptoKit
-import Debug
+import DevKit
 import Foundation
 
 public protocol Requestable: Decodable {
@@ -175,7 +175,7 @@ public extension Requestable {
             Log.error(
                 in: .network,
                 "Failed to runtime agnostically hash a URLSessionNetworkTask id. Falling back to Hasher().",
-                params: [
+                info: [
                     "Response Type": "\(Self.self)",
                     "Parameters Type": "\(P.self)",
                     "URL": "\(urlString)",
