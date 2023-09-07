@@ -54,7 +54,7 @@ class TaskQueue {
                 } catch {
                     Log.error(
                         "Failed to merge tasks, queuing new task.",
-                        params: ["New Task": mergable, "Existing Task": activeTask, "error": error]
+                        info: ["New Task": mergable, "Existing Task": activeTask, "error": error]
                     )
                 }
             }

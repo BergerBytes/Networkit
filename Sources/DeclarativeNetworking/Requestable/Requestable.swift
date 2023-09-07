@@ -64,6 +64,7 @@ public protocol Requestable: Decodable {
     static func generateId(given parameters: P) -> String
 
     /// Additional hash data to use in generating unique Id.
+    /// Will no be used if overriding ``generateId(given:)``
     static func additionalHashData(given parameters: P) -> String?
 
     static func requestTask(given parameters: P, delegate: RequestDelegateConfig?, dataCallback: ((Self) -> Void)?, resultCallback: ((Result<Self, Error>) -> Void)?) -> QueueableTask
