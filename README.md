@@ -23,6 +23,6 @@ Networkit aims to provide easy to use yet powerful networking features. The libr
 
 Swift package manager is the preferred way to use Networkit. Just add this repository. Locking to the current minor version is recommended.
 
-```swift
+```
 https://github.com/BergerBytes/swift-networking
 ```
