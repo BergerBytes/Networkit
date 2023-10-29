@@ -23,6 +23,25 @@ Networkit aims to provide easy to use yet powerful networking features. The libr
 
 Swift package manager is the preferred way to use Networkit. Just add this repository. Locking to the current minor version is recommended.
 
-```swift
+```plaintext
 https://github.com/BergerBytes/swift-networking
+```
+
+### Simple Example
+
+```swift
+struct PingEndpoint: Decodable {
+    let someData: String
+}
+
+extension PingEndpoint: Endpoint {
+    static var method: RequestMethod = .get
+    static func path(given _: NoParameters) -> URLPath? {
+        "endpoint" / "path" / "to" / "ping"
+    }
+}
+```
+
+```swift
+let response = try await PingEndpoint.request()
 ```
