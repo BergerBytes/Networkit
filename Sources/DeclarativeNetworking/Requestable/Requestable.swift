@@ -178,27 +178,24 @@ public extension Requestable {
         generateDefaultId(given: parameters)
     }
 
-    @inlinable static func generateDefaultId(given parameters: P) -> String {
+    static func generateDefaultId(given parameters: P) -> String {
         let urlString = url(given: parameters).absoluteString
-        
+
         var data = [
             method.rawValue,
             urlString,
-            String(
-                decoding: (try? JSONEncoder().encode(parameters)) ?? Data(),
-                as: UTF8.self
-            ),
+            parameters.sortedKeyValueString(),
         ]
-        
+
         if let additionalHashData = additionalHashData(given: parameters) {
             data.append(additionalHashData)
         }
-        
+
         guard let hash = try? SHA256.hash(data: JSONEncoder().encode(data)) else {
             Log.error(
                 in: .network,
                 "Failed to runtime agnostically hash a URLSessionNetworkTask id. Falling back to Hasher().",
-                params: [
+                info: [
                     "Response Type": "\(Self.self)",
                     "Parameters Type": "\(P.self)",
                     "URL": "\(urlString)",
