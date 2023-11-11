@@ -27,6 +27,7 @@ public protocol Cacheable {
 
 enum CacheableError: Error {
     case failedToDecode
+    case notFound
 }
 
 public extension Cacheable {
@@ -44,12 +45,12 @@ public extension Cacheable where Self: Requestable {
     @inlinable static func request(given parameters: P, delegate: RequestDelegateConfig? = nil, force: Bool = false, with networkManager: NetworkManagerProvider = NetworkManager.shared) {
         _request(given: parameters, delegate: delegate, force: force, with: networkManager, dataCallback: nil, resultCallback: nil)
     }
-    
-    @inlinable static func request(given parameters: P, delegate: RequestDelegateConfig, force: Bool = false, with networkManager: NetworkManagerProvider = NetworkManager.shared, callback: @escaping (Self) -> ()) {
+
+    @inlinable static func request(given parameters: P, delegate: RequestDelegateConfig, force: Bool = false, with networkManager: NetworkManagerProvider = NetworkManager.shared, callback: @escaping (Self) -> Void) {
         _request(given: parameters, delegate: delegate, force: force, with: networkManager, dataCallback: callback, resultCallback: nil)
     }
-    
-    @inlinable static func request(given parameters: P, force: Bool = false, with networkManager: NetworkManagerProvider = NetworkManager.shared, callback: @escaping (Result<Self, Error>) -> ()) {
+
+    @inlinable static func request(given parameters: P, force: Bool = false, with networkManager: NetworkManagerProvider = NetworkManager.shared, callback: @escaping (Result<Self, Error>) -> Void) {
         _request(given: parameters, delegate: nil, force: force, with: networkManager, dataCallback: nil, resultCallback: callback)
     }
 
@@ -58,7 +59,7 @@ public extension Cacheable where Self: Requestable {
         _request(given: parameters, delegate: delegate, force: force, with: networkManager, dataCallback: dataCallback, resultCallback: nil)
     }
 
-    static func _request(given parameters: P, delegate: RequestDelegateConfig?, force: Bool, with networkManager: NetworkManagerProvider = NetworkManager.shared, dataCallback: ((Self) -> Void)?, resultCallback: ((Result<Self, Error>) -> ())?) {
+    static func _request(given parameters: P, delegate: RequestDelegateConfig?, force: Bool, with networkManager: NetworkManagerProvider = NetworkManager.shared, dataCallback: ((Self) -> Void)?, resultCallback: ((Result<Self, Error>) -> Void)?) {
         let id = Self.generateId(given: parameters)
         let isExpired = force || (try? networkManager.isObjectExpired(for: id)) == true
 
@@ -71,7 +72,7 @@ public extension Cacheable where Self: Requestable {
                     dataCallback(data)
                 }
             }
-            
+
             if let resultCallback {
                 Task { @MainActor [resultCallback, data] in
                     resultCallback(.success(data))
@@ -156,7 +157,7 @@ public extension Cacheable where Self: Requestable {
 public extension Cacheable where Self: Requestable {
     static func request(given parameters: P, with networkManager: NetworkManagerProvider = NetworkManager.shared, force: Bool = false) async throws -> Self {
         let id = generateId(given: parameters)
-        
+
         if
             !force,
             !isExpired(id: id, with: networkManager)
@@ -164,19 +165,19 @@ public extension Cacheable where Self: Requestable {
             switch cachedData(for: id, with: networkManager) {
             case let .success(data):
                 return data
-                
+
             case .failure:
                 try? networkManager.remove(object: id)
             }
         }
-        
+
         return try await withCheckedThrowingContinuation { continuation in
             networkManager.enqueue(
                 Self.requestTask(given: parameters) { [continuation] result in
                     switch result {
                     case let .success(response):
                         continuation.resume(returning: response)
-                        
+
                     case let .failure(error):
                         continuation.resume(throwing: error)
                     }
@@ -217,11 +218,11 @@ public extension Cacheable where Self: Requestable, Self.P: EmptyInitializable {
     @inlinable static func request(delegate: RequestDelegateConfig?, with networkManager: NetworkManagerProvider = NetworkManager.shared, force: Bool = false, dataCallback: ((Self) -> Void)?) {
         _request(given: .init(), delegate: delegate, force: force, with: networkManager, dataCallback: dataCallback, resultCallback: nil)
     }
-    
+
     @inlinable static func request(with networkManager: NetworkManagerProvider = NetworkManager.shared, force: Bool = false, callback: ((Result<Self, Error>) -> Void)?) {
         _request(given: .init(), delegate: nil, force: force, with: networkManager, dataCallback: nil, resultCallback: callback)
     }
-    
+
     @inlinable static func request(with networkManager: NetworkManagerProvider = NetworkManager.shared, force: Bool = false) async throws -> Self {
         try await request(given: .init(), with: networkManager, force: force)
     }
@@ -258,8 +259,8 @@ public extension Cacheable where Self: Requestable, Self.P == NoParameters {
     @inlinable static func request(delegate: RequestDelegateConfig?, with networkManager: NetworkManagerProvider = NetworkManager.shared, force: Bool = false, dataCallback: ((Self) -> Void)?) {
         _request(given: .none, delegate: delegate, force: force, with: networkManager, dataCallback: dataCallback, resultCallback: nil)
     }
-    
-    @inlinable static func request(with networkManager: NetworkManagerProvider = NetworkManager.shared, force: Bool = false, callback: ((Result<Self, Error>) -> Void)?) {
+
+    @inlinable static func request(with _: NetworkManagerProvider = NetworkManager.shared, force: Bool = false, callback: ((Result<Self, Error>) -> Void)?) {
         _request(given: .none, delegate: nil, force: force, dataCallback: nil, resultCallback: callback)
     }
 
@@ -270,7 +271,7 @@ public extension Cacheable where Self: Requestable, Self.P == NoParameters {
             networkManager.enqueue(request)
         }
     }
-    
+
     @inlinable static func request(with networkManager: NetworkManagerProvider = NetworkManager.shared, force: Bool = false) async throws -> Self {
         try await request(given: .none, with: networkManager, force: force)
     }
@@ -281,10 +282,10 @@ extension Cacheable where Self: Requestable {
     @inline(__always) private static func cachedData(for id: String, with networkManager: NetworkManagerProvider) -> Result<Self, Error> {
         Self.cachedData(type: Self.self, for: id, decoder: Self.decoder, with: networkManager)
     }
-    
+
     private static func isExpired(id: String, with networkManager: NetworkManagerProvider) -> Bool {
         var isExpired = (try? networkManager.isObjectExpired(for: id)) ?? true
-        
+
         // If the new cache policy would expire before the existing cached expiry date, set isExpired to true.
         if
             isExpired == false,
@@ -294,10 +295,10 @@ extension Cacheable where Self: Requestable {
         {
             isExpired = true
         }
-        
+
         return isExpired
     }
-    
+
     private static func isExpired(given parameters: P, with networkManager: NetworkManagerProvider) -> Bool {
         isExpired(id: generateId(given: parameters), with: networkManager)
     }
@@ -306,13 +307,46 @@ extension Cacheable where Self: Requestable {
 extension Cacheable {
     /// Returns any cached data found in storage regardless of it's expiration.
     static func cachedData<T: Requestable>(type _: T.Type, for id: String, decoder: ResponseDecoder, with networkManager: NetworkManagerProvider) -> Result<T, Error> {
-        if
-            let data = try? networkManager.get(object: id),
-            let decodedData: T = try? decoder.decode(T.self, from: data)
-        {
-            return .success(decodedData)
+        if let data = try? networkManager.get(object: id) {
+            if let decodedData: T = try? decoder.decode(T.self, from: data) {
+                return .success(decodedData)
+            } else {
+                return .failure(CacheableError.failedToDecode)
+            }
         } else {
-            return .failure(CacheableError.failedToDecode)
+            return .failure(CacheableError.notFound)
         }
+    }
+}
+
+public extension Cacheable where Self: Requestable {
+    static func cache(given parameters: P, with networkManager: NetworkManagerProvider = NetworkManager.shared) -> Self? {
+        switch cachedData(type: Self.self, for: Self.generateId(given: parameters), decoder: decoder, with: networkManager) {
+        case let .success(data):
+            data
+
+        case .failure:
+            nil
+        }
+    }
+
+    static func cache(given parameters: P, with networkManager: NetworkManagerProvider = NetworkManager.shared) throws -> Self {
+        switch cachedData(type: Self.self, for: Self.generateId(given: parameters), decoder: decoder, with: networkManager) {
+        case let .success(data):
+            data
+
+        case let .failure(error):
+            throw error
+        }
+    }
+}
+
+public extension Cacheable where Self: Requestable, Self.P: EmptyInitializable {
+    @inlinable static func cache(with networkManager: NetworkManagerProvider = NetworkManager.shared) -> Self? {
+        cache(given: .init(), with: networkManager)
+    }
+
+    @inlinable static func cache(with networkManager: NetworkManagerProvider = NetworkManager.shared) throws -> Self {
+        try cache(given: .init(), with: networkManager)
     }
 }
