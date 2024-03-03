@@ -192,7 +192,7 @@ public class URLSessionNetworkTask<R: Requestable>: QueueableTask {
     }
 
     open func failed(error: Error) {
-        Log.error(in: .network, error, params: ["id": requestIdentifier, "url": url])
+        Log.error(in: .network, error, info: ["id": requestIdentifier, "url": url])
         DispatchQueue.main.sync {
             resultCallbacks.forEach { $0(.failure(error)) }
             self.delegate |> { $0.requestFailed(id: self.requestIdentifier, error: error) }
